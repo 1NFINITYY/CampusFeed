@@ -4,9 +4,6 @@ import LostItem from "../models/LostItem.js";
 import fs from "fs";
 import path from "path";
 
-
-
-
 const router = express.Router();
 
 // Multer config
@@ -32,11 +29,16 @@ router.get("/", async (req, res) => {
 // POST new lost item
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, postedBy, contactNo } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const item = new LostItem({ title, description, imageUrl });
+    if (!title || !description || !postedBy || !contactNo) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const item = new LostItem({ title, description, postedBy, contactNo, imageUrl });
     await item.save();
+
     res.status(201).json(item);
   } catch (err) {
     res.status(500).json({ error: err.message });

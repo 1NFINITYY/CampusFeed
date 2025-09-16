@@ -3,9 +3,15 @@ import axios from "axios";
 
 export default function Items() {
   const [lostItems, setLostItems] = useState([]);
-  const [newItem, setNewItem] = useState({ title: "", description: "", image: null });
+  const [newItem, setNewItem] = useState({
+    title: "",
+    description: "",
+    image: null,
+    postedBy: "",
+    contactNo: "",
+  });
   const [preview, setPreview] = useState(null);
-  const backendURL = "http://localhost:5000"; // Your backend
+  const backendURL = "http://localhost:5000";
 
   // Fetch all items
   const fetchItems = async () => {
@@ -23,23 +29,27 @@ export default function Items() {
 
   // Add item
   const handleAddItem = async () => {
-    if (!newItem.title || !newItem.description) return alert("Please fill all fields");
+    if (!newItem.title || !newItem.description || !newItem.postedBy || !newItem.contactNo) {
+      return alert("⚠️ Please fill all fields");
+    }
     try {
       const formData = new FormData();
       formData.append("title", newItem.title);
       formData.append("description", newItem.description);
+      formData.append("postedBy", newItem.postedBy);
+      formData.append("contactNo", newItem.contactNo);
       if (newItem.image) formData.append("image", newItem.image);
 
       await axios.post(`${backendURL}/api/lostitems`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setNewItem({ title: "", description: "", image: null });
+      setNewItem({ title: "", description: "", image: null, postedBy: "", contactNo: "" });
       setPreview(null);
       fetchItems();
     } catch (err) {
       console.error(err);
-      alert("Failed to add item");
+      alert("❌ Failed to add item");
     }
   };
 
@@ -50,7 +60,7 @@ export default function Items() {
       fetchItems();
     } catch (err) {
       console.error(err);
-      alert("Failed to mark as found");
+      alert("❌ Failed to mark as found");
     }
   };
 
@@ -62,7 +72,7 @@ export default function Items() {
       fetchItems();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete item");
+      alert("❌ Failed to delete item");
     }
   };
 
@@ -82,7 +92,7 @@ export default function Items() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-10 px-4 md:px-8">
       <h1 className="text-5xl md:text-6xl font-bold text-center text-gray-800 mb-12">
-        Lost & Found Dashboard
+        Lost & Found Section
       </h1>
 
       {/* Add Item Form */}
@@ -94,14 +104,28 @@ export default function Items() {
             placeholder="Item Name"
             value={newItem.title}
             onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-            className="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-center text-gray-700"
+            className="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
           />
           <textarea
             rows="3"
             placeholder="Description / Location"
             value={newItem.description}
             onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-            className="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700 text-center"
+            className="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
+          />
+          <input
+            type="text"
+            placeholder="Posted By"
+            value={newItem.postedBy}
+            onChange={(e) => setNewItem({ ...newItem, postedBy: e.target.value })}
+            className="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
+          />
+          <input
+            type="text"
+            placeholder="Contact No."
+            value={newItem.contactNo}
+            onChange={(e) => setNewItem({ ...newItem, contactNo: e.target.value })}
+            className="w-full p-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
           />
           <div className="flex flex-col items-center md:col-span-2 gap-4">
             <label className="cursor-pointer bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl shadow-md font-semibold">
@@ -137,7 +161,6 @@ export default function Items() {
                 item.status === "found" ? "opacity-50" : ""
               }`}
             >
-              {/* Image */}
               {item.imageUrl && (
                 <img
                   src={`${backendURL}${item.imageUrl}`}
@@ -145,16 +168,21 @@ export default function Items() {
                   className="w-full h-64 object-cover rounded-t-3xl"
                 />
               )}
-
-              {/* Card Content */}
               <div className="flex flex-col flex-1 justify-between p-6 text-center">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">Item lost: {item.title}</h3>
-                  <p className="text-gray-600 mb-2">Description: {item.description}</p>
-                  <span className="text-gray-500 font-medium">Status: {item.status}</span>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">{item.title}</h3>
+                  <p className="text-gray-600 mb-2">{item.description}</p>
+                  <p className="text-gray-700 font-medium mb-1">Posted By: {item.postedBy}</p>
+                  <p className="text-gray-700 font-medium mb-3">📞: {item.contactNo}</p>
+                  <span
+                    className={`font-semibold ${
+                      item.status === "lost" ? "text-red-500" : "text-green-500"
+                    }`}
+                  >
+                    Status: {item.status}
+                  </span>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="mt-6 flex flex-col md:flex-row gap-4 justify-center">
                   <button
                     onClick={() => markFound(item._id)}
