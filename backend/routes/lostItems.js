@@ -1,19 +1,21 @@
+// routes/lostItems.js
 import express from "express";
 import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../config/cloudinary.js"; // 👈 your cloudinary config file
 import LostItem from "../models/LostItem.js";
-import fs from "fs";
-import path from "path";
 
 const router = express.Router();
 
-// Multer config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "." + file.originalname.split(".").pop());
+// ✅ Use Cloudinary storage instead of local disk
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "lost_items", // all images go to Cloudinary folder "lost_items"
+    allowed_formats: ["jpg", "png", "jpeg", "webp"],
   },
 });
+
 const upload = multer({ storage });
 
 // GET all lost items
@@ -30,7 +32,7 @@ router.get("/", async (req, res) => {
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { title, description, postedBy, contactNo } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const imageUrl = req.file ? req.file.path : null; // 👈 Cloudinary gives URL in `req.file.path`
 
     if (!title || !description || !postedBy || !contactNo) {
       return res.status(400).json({ error: "All fields are required" });
@@ -65,10 +67,11 @@ router.delete("/:id", async (req, res) => {
     const item = await LostItem.findById(req.params.id);
     if (!item) return res.status(404).json({ error: "Item not found" });
 
-    // Delete image file if exists
+    // ❌ No need to delete from local folder, but we *can* remove from Cloudinary:
     if (item.imageUrl) {
-      const imagePath = path.join("uploads", path.basename(item.imageUrl));
-      if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+      // Extract public_id from the URL
+      const publicId = item.imageUrl.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`lost_items/${publicId}`);
     }
 
     await LostItem.findByIdAndDelete(req.params.id);
