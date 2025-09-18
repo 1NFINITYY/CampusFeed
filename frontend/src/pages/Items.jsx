@@ -105,7 +105,7 @@ export default function Items() {
       </h1>
 
       {/* Add Item Form */}
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-pink-200 mb-12">
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-black-200 mb-12">
         <h2 className="text-3xl font-semibold text-center text-gray-700 mb-8">Report a Lost Item</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           <input
@@ -195,7 +195,13 @@ export default function Items() {
                   <h3 className="text-2xl font-bold text-gray-800 mb-2">{item.title}</h3>
                   <p className="text-gray-600 mb-2">{item.description}</p>
                   <p className="text-gray-700 font-medium mb-1">Posted By: {item.postedBy}</p>
-                  <p className="text-gray-700 font-medium mb-3">📞: {item.contactNo}</p>
+                  <p className="text-gray-700 font-medium mb-1">📞: {item.contactNo}</p>
+                  {/* Timestamp */}
+                  {item.createdAt && (
+                    <p className="text-gray-500 text-sm mb-2">
+                      🕒 Posted on: {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                  )}
                   <span
                     className={`font-semibold ${
                       item.status === "lost" ? "text-red-500" : "text-green-500"

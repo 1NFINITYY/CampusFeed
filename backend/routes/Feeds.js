@@ -1,21 +1,31 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import Feed from "../models/Feed.js";
 
 const router = express.Router();
 
-// Multer setup for feed images
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+// 🔹 Cloudinary config (make sure your .env has CLOUDINARY_* vars)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// 🔹 Multer Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "campus-feed", // all images will go into this folder in Cloudinary
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation: [{ width: 800, height: 600, crop: "limit" }], // optional resize
   },
 });
+
 const upload = multer({ storage });
 
-// GET all feeds
+// 🔹 GET all feeds
 router.get("/", async (req, res) => {
   try {
     const feeds = await Feed.find().sort({ createdAt: -1 });
@@ -25,13 +35,13 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST a feed
+// 🔹 POST a feed
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { title, description } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const { title, description, postedBy } = req.body;
+    const imageUrl = req.file ? req.file.path : null; // Cloudinary returns secure URL in file.path
 
-    const feed = new Feed({ title, description, imageUrl });
+    const feed = new Feed({ title, description, postedBy, imageUrl });
     await feed.save();
 
     res.status(201).json(feed);
@@ -40,7 +50,7 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-//deletes a feed
+// 🔹 DELETE a feed
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -56,6 +66,5 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 export default router;

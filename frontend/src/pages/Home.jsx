@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
-  const backendURL = "http://localhost:5000";
+  const backendURL = "http://localhost:5000"; // still used for API calls, not images
 
   // Fetch posts from backend
   const fetchPosts = async () => {
@@ -12,6 +14,7 @@ export default function Home() {
       setPosts(data);
     } catch (err) {
       console.error("Error fetching posts:", err);
+      toast.error("❌ Failed to fetch posts");
     }
   };
 
@@ -25,15 +28,18 @@ export default function Home() {
     try {
       await axios.delete(`${backendURL}/api/feeds/${id}`);
       setPosts(posts.filter((post) => post._id !== id));
-      alert("✅ Post deleted successfully!");
+      toast.success("✅ Post deleted successfully!");
     } catch (err) {
       console.error("Error deleting post:", err);
-      alert("❌ Failed to delete post");
+      toast.error("❌ Failed to delete post");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 md:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue py-8 px-4 md:px-8">
+      {/* Toastify Container */}
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+
       {/* Header */}
       <div className="max-w-4xl mx-auto text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-3">
@@ -60,7 +66,7 @@ export default function Home() {
           >
             {post.imageUrl && (
               <img
-                src={`${backendURL}${post.imageUrl}`}
+                src={post.imageUrl} // ✅ now uses Cloudinary full URL directly
                 alt={post.title}
                 className="w-full h-48 md:h-56 object-cover"
               />
@@ -70,14 +76,24 @@ export default function Home() {
                 {post.title}
               </h2>
               <p className="text-gray-700 flex-1">{post.description}</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Posted by: {post.postedBy?.name || "Unknown"}
+
+              {/* Posted By */}
+              <p className="text-gray-500 text-sm mt-3 italic">
+                ✍️ Posted by: {post.postedBy || "Anonymous"}
               </p>
+
+              {/* Timestamp */}
+              {post.createdAt && (
+                <p className="text-gray-400 text-xs mt-1">
+                  🕒 {new Date(post.createdAt).toLocaleString()}
+                </p>
+              )}
+
               <button
                 onClick={() => handleDelete(post._id)}
                 className="mt-4 self-start bg-red-500 hover:bg-red-600 text-white text-sm py-1.5 px-4 rounded-lg shadow-sm transition transform hover:scale-105"
               >
-                🗑️ Delete
+                Delete
               </button>
             </div>
           </div>

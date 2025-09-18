@@ -5,7 +5,7 @@ const feedSchema = new mongoose.Schema(
     title: { type: String, required: true },
     description: { type: String, required: true },
     imageUrl: { type: String },
-    postedBy: { type: String, default: "Anonymous" },
+    postedBy: { type: String, required: true },
   },
   { timestamps: true }
 );
