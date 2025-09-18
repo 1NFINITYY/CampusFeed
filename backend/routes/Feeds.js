@@ -6,26 +6,29 @@ import Feed from "../models/Feed.js";
 
 const router = express.Router();
 
-// 🔹 Cloudinary config (make sure your .env has CLOUDINARY_* vars)
+// Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// 🔹 Multer Cloudinary storage
+// Multer Cloudinary storage
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: {
-    folder: "campus-feed", // all images will go into this folder in Cloudinary
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
-    transformation: [{ width: 800, height: 600, crop: "limit" }], // optional resize
+  params: async (req, file) => {
+    const isPdf = file.mimetype === "application/pdf";
+    return {
+      folder: "campus-feed",
+      resource_type: isPdf ? "raw" : "auto", // PDFs as raw, others auto
+      public_id: file.originalname.split(".")[0],
+    };
   },
 });
 
 const upload = multer({ storage });
 
-// 🔹 GET all feeds
+// GET all feeds
 router.get("/", async (req, res) => {
   try {
     const feeds = await Feed.find().sort({ createdAt: -1 });
@@ -35,22 +38,48 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 🔹 POST a feed
-router.post("/", upload.single("image"), async (req, res) => {
+// POST a feed
+router.post("/", upload.single("file"), async (req, res) => {
   try {
     const { title, description, postedBy } = req.body;
-    const imageUrl = req.file ? req.file.path : null; // Cloudinary returns secure URL in file.path
 
-    const feed = new Feed({ title, description, postedBy, imageUrl });
+    if (!title || !description || !postedBy) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    let fileUrl = req.file ? req.file.path : null;
+
+    // Determine resourceType
+    let resourceType = "raw"; // default
+    if (req.file) {
+      if (req.file.resource_type) resourceType = req.file.resource_type;
+      else if (req.file.mimetype.startsWith("image")) resourceType = "image";
+      else if (req.file.mimetype.startsWith("video")) resourceType = "video";
+      else if (req.file.mimetype === "application/pdf") resourceType = "raw";
+    }
+
+    // 🔹 Use correct URL for PDFs (raw delivery)
+    if (resourceType === "raw" && fileUrl) {
+      fileUrl = fileUrl.replace("/image/upload/", "/raw/upload/");
+    }
+
+    const feed = new Feed({
+      title,
+      description,
+      postedBy,
+      fileUrl,      // PDF URL now points to raw endpoint
+      resourceType, // image | video | raw
+    });
+
     await feed.save();
-
     res.status(201).json(feed);
   } catch (err) {
+    console.error("Error uploading feed:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 DELETE a feed
+// DELETE a feed
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;

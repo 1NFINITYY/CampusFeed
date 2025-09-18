@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
-  const backendURL = "http://localhost:5000"; // still used for API calls, not images
+  const backendURL = "http://localhost:5000"; // backend API
 
   // Fetch posts from backend
   const fetchPosts = async () => {
@@ -64,13 +64,36 @@ export default function Home() {
             key={post._id}
             className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col transition-transform transform hover:-translate-y-1 hover:shadow-xl"
           >
-            {post.imageUrl && (
+            {/* 🔹 File Preview */}
+            {post.resourceType === "image" && post.fileUrl && (
               <img
-                src={post.imageUrl} // ✅ now uses Cloudinary full URL directly
+                src={post.fileUrl}
                 alt={post.title}
                 className="w-full h-48 md:h-56 object-cover"
               />
             )}
+
+            {post.resourceType === "video" && post.fileUrl && (
+              <video
+                src={post.fileUrl}
+                controls
+                className="w-full h-48 md:h-56 object-cover"
+              />
+            )}
+
+            {post.resourceType === "raw" && post.fileUrl && (
+              <div className="flex items-center justify-center h-48 md:h-56 bg-gray-100">
+                <a
+                  href={post.fileUrl}
+                  download={`${post.title || "document"}.pdf`} // frontend download attribute
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition"
+                >
+                  ⬇️ Download PDF
+                </a>
+              </div>
+            )}
+
+            {/* Content */}
             <div className="p-5 flex flex-col flex-1">
               <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
                 {post.title}

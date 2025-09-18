@@ -9,9 +9,10 @@ export default function AddFeed() {
     title: "",
     description: "",
     postedBy: "",
-    image: null,
+    file: null, // 🔹 generic file instead of only image
   });
   const [preview, setPreview] = useState(null);
+  const [previewType, setPreviewType] = useState(null); // 🔹 image | video | pdf
   const [loading, setLoading] = useState(false);
 
   const backendURL = "http://localhost:5000";
@@ -29,14 +30,15 @@ export default function AddFeed() {
       formData.append("title", newFeed.title);
       formData.append("description", newFeed.description);
       formData.append("postedBy", newFeed.postedBy);
-      if (newFeed.image) formData.append("image", newFeed.image);
+      if (newFeed.file) formData.append("file", newFeed.file); // 🔹 backend expects "file"
 
       await axios.post(`${backendURL}/api/feeds`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setNewFeed({ title: "", description: "", postedBy: "", image: null });
+      setNewFeed({ title: "", description: "", postedBy: "", file: null });
       setPreview(null);
+      setPreviewType(null);
       toast.success("✅ Feed posted successfully!");
     } catch (err) {
       console.error("Error posting feed:", err);
@@ -46,11 +48,25 @@ export default function AddFeed() {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setNewFeed((prev) => ({ ...prev, image: file }));
-    setPreview(URL.createObjectURL(file));
+
+    let type = file.type;
+    let previewUrl = URL.createObjectURL(file);
+
+    if (type.startsWith("image/")) {
+      setPreviewType("image");
+    } else if (type.startsWith("video/")) {
+      setPreviewType("video");
+    } else if (type === "application/pdf") {
+      setPreviewType("pdf");
+    } else {
+      setPreviewType(null);
+    }
+
+    setNewFeed((prev) => ({ ...prev, file }));
+    setPreview(previewUrl);
   };
 
   return (
@@ -101,17 +117,32 @@ export default function AddFeed() {
           />
           <input
             type="file"
-            accept="image/*"
-            onChange={handleImageChange}
+            accept="image/*,video/*,.pdf" // 🔹 allow all
+            onChange={handleFileChange}
             className="text-gray-600"
           />
-          {preview && (
+
+          {/* 🔹 Preview */}
+          {preview && previewType === "image" && (
             <img
               src={preview}
               alt="Preview"
               className="w-48 h-48 object-cover rounded-xl shadow-md mx-auto"
             />
           )}
+          {preview && previewType === "video" && (
+            <video
+              src={preview}
+              controls
+              className="w-64 h-48 rounded-xl shadow-md mx-auto"
+            />
+          )}
+          {preview && previewType === "pdf" && (
+            <p className="text-blue-600 underline text-center">
+              📄 PDF ready to upload
+            </p>
+          )}
+
           <button
             onClick={handleAddFeed}
             disabled={loading}

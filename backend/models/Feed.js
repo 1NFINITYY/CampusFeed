@@ -1,15 +1,18 @@
 import mongoose from "mongoose";
 
-const feedSchema = new mongoose.Schema(
+const FeedSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
-    description: { type: String, required: true },
-    imageUrl: { type: String },
+    description: { type: String },
     postedBy: { type: String, required: true },
+    fileUrl: { type: String }, // Cloudinary URL
+    resourceType: {
+      type: String,
+      enum: ["image", "video", "raw"],
+      default: "image",
+    },
   },
   { timestamps: true }
 );
 
-const Feed = mongoose.model("Feed", feedSchema);
-
-export default Feed;
+export default mongoose.model("Feed", FeedSchema);
