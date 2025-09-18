@@ -1,24 +1,19 @@
-import express from "express"; 
-import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
+// server.js
+import express from "express";
 import dotenv from "dotenv";
 
-import { connectDB } from "./config/db.js"; // ✅ import db
+import { connectDB } from "./config/db.js";
+import { applyMiddleware } from "./middleware/middleware.js";
+
 import lostItemsRoutes from "./routes/lostItems.js";
-import feedsRoutes from "./routes/Feeds.js";
+import feedsRoutes from "./routes/feeds.js";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
 
-// Middleware
-app.use(cors({ origin: "http://localhost:5173" }));
-app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Apply middleware
+applyMiddleware(app);
 
 // Connect to MongoDB
 connectDB();
@@ -26,6 +21,9 @@ connectDB();
 // Routes
 app.use("/api/lostitems", lostItemsRoutes);
 app.use("/api/feeds", feedsRoutes);
+
+// Optional: serve static frontend (if you build React later)
+// app.use(express.static(path.join(__dirname, "client/build")));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

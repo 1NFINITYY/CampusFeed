@@ -39,10 +39,10 @@ export default function AddFeed() {
       setNewFeed({ title: "", description: "", postedBy: "", file: null });
       setPreview(null);
       setPreviewType(null);
-      toast.success("✅ Feed posted successfully!");
+      toast.success("Feed posted successfully!");
     } catch (err) {
       console.error("Error posting feed:", err);
-      toast.error("❌ Failed to post feed");
+      toast.error("Failed to post feed");
     } finally {
       setLoading(false);
     }

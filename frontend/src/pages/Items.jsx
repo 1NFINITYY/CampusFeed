@@ -22,7 +22,7 @@ export default function Items() {
       setLostItems(res.data);
     } catch (err) {
       console.error(err);
-      toast.error("❌ Error fetching items");
+      toast.error("Error fetching items");
     }
   };
 
@@ -52,11 +52,11 @@ export default function Items() {
 
       setNewItem({ title: "", description: "", image: null, postedBy: "", contactNo: "" });
       setPreview(null);
-      toast.success("✅ Item added successfully!");
+      toast.success(" Item added successfully!");
       fetchItems();
     } catch (err) {
       console.error(err);
-      toast.error("❌ Failed to add item");
+      toast.error(" Failed to add item");
     } finally {
       setLoading(false);
     }
@@ -65,11 +65,11 @@ export default function Items() {
   const markFound = async (id) => {
     try {
       await axios.patch(`${backendURL}/api/lostitems/${id}/found`);
-      toast.info("ℹ️ Marked as found");
+      toast.info("Marked as found");
       fetchItems();
     } catch (err) {
       console.error(err);
-      toast.error("❌ Failed to mark as found");
+      toast.error("Failed to mark as found");
     }
   };
 
@@ -77,11 +77,11 @@ export default function Items() {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
     try {
       await axios.delete(`${backendURL}/api/lostitems/${id}`);
-      toast.success("🗑️ Item deleted successfully");
+      toast.success("Item deleted successfully");
       fetchItems();
     } catch (err) {
       console.error(err);
-      toast.error("❌ Failed to delete item");
+      toast.error("Failed to delete item");
     }
   };
 
@@ -199,7 +199,7 @@ export default function Items() {
                   {/* Timestamp */}
                   {item.createdAt && (
                     <p className="text-gray-500 text-sm mb-2">
-                      🕒 Posted on: {new Date(item.createdAt).toLocaleString()}
+                      Posted on: {new Date(item.createdAt).toLocaleString()}
                     </p>
                   )}
                   <span
