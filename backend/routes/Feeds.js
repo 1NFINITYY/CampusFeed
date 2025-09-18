@@ -58,7 +58,7 @@ router.post("/", upload.single("file"), async (req, res) => {
       else if (req.file.mimetype === "application/pdf") resourceType = "raw";
     }
 
-    // 🔹 Use correct URL for PDFs (raw delivery)
+    // Use correct URL for PDFs (raw delivery)
     if (resourceType === "raw" && fileUrl) {
       fileUrl = fileUrl.replace("/image/upload/", "/raw/upload/");
     }
@@ -67,8 +67,9 @@ router.post("/", upload.single("file"), async (req, res) => {
       title,
       description,
       postedBy,
-      fileUrl,      // PDF URL now points to raw endpoint
-      resourceType, // image | video | raw
+      fileUrl,
+      resourceType,
+      cloudinaryPublicId: req.file.filename, // save public_id for deletion
     });
 
     await feed.save();
@@ -79,17 +80,35 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 });
 
-// DELETE a feed
+// DELETE a feed and remove Cloudinary file
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedFeed = await Feed.findByIdAndDelete(id);
+    const feed = await Feed.findById(id);
 
-    if (!deletedFeed) {
-      return res.status(404).json({ message: "Feed not found" });
+    if (!feed) return res.status(404).json({ message: "Feed not found" });
+
+    // Delete file from Cloudinary if public_id exists
+    if (feed.cloudinaryPublicId) {
+      const publicId = `campus-feed/${feed.cloudinaryPublicId}`;
+      try {
+        await cloudinary.uploader.destroy(publicId, {
+          resource_type:
+            feed.resourceType === "raw"
+              ? "raw"
+              : feed.resourceType === "video"
+              ? "video"
+              : "image",
+        });
+      } catch (cloudErr) {
+        console.error("Cloudinary deletion error:", cloudErr);
+      }
     }
 
-    res.status(200).json({ message: "Feed deleted successfully" });
+    await Feed.findByIdAndDelete(id);
+    res
+      .status(200)
+      .json({ message: "Feed and Cloudinary file deleted successfully" });
   } catch (err) {
     console.error("Error deleting feed:", err);
     res.status(500).json({ message: "Server error" });
