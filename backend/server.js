@@ -7,6 +7,7 @@ import { applyMiddleware } from "./middleware/middleware.js";
 
 import lostItemsRoutes from "./routes/lostItems.js";
 import feedsRoutes from "./routes/feeds.js";
+import authRoutes from "./routes/auth.js";
 
 dotenv.config();
 
@@ -21,6 +22,8 @@ connectDB();
 // Routes
 app.use("/api/lostitems", lostItemsRoutes);
 app.use("/api/feeds", feedsRoutes);
+app.use("/auth", authRoutes);
+
 
 // Optional: serve static frontend (if you build React later)
 // app.use(express.static(path.join(__dirname, "client/build")));

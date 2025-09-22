@@ -3,15 +3,37 @@ import Home from "./pages/Home";
 import AddFeed from "./pages/AddFeed";
 import Items from "./pages/Items";
 import Navbar from "./components/Navbar";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <Router>
       <Navbar />
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
-        <Route path="/AddFeed" element={<AddFeed />} />
-        <Route path="/items" element={<Items />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+
+        {/* Protected routes */}
+        <Route
+          path="/AddFeed"
+          element={
+            <ProtectedRoute>
+              <AddFeed />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/items"
+          element={
+            <ProtectedRoute>
+              <Items />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );
