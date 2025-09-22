@@ -33,23 +33,18 @@ export default function AddFeed() {
       formData.append("description", newFeed.description);
       if (newFeed.file) formData.append("file", newFeed.file);
 
-      console.log("Sending feed data:", formData);
-
-      const res = await axios.post(`${backendURL}/api/feeds`, formData, {
+      await axios.post(`${backendURL}/api/feeds`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
       });
 
-      console.log("Feed created:", res.data);
-
       setNewFeed({ title: "", description: "", file: null });
       setPreview(null);
       setPreviewType(null);
       toast.success("✅ Feed posted successfully!");
     } catch (err) {
-      console.error("Error posting feed:", err.response || err);
       toast.error("Failed to post feed");
     } finally {
       setLoading(false);

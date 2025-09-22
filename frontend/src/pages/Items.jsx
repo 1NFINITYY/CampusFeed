@@ -9,7 +9,6 @@ export default function Items() {
     title: "",
     description: "",
     image: null,
-    postedBy: "",
     contactNo: "",
   });
   const [preview, setPreview] = useState(null);
@@ -21,7 +20,6 @@ export default function Items() {
       const res = await axios.get(`${backendURL}/api/lostitems`);
       setLostItems(res.data);
     } catch (err) {
-      console.error(err);
       toast.error("Error fetching items");
     }
   };
@@ -31,9 +29,12 @@ export default function Items() {
   }, []);
 
   const handleAddItem = async () => {
-    if (!newItem.title || !newItem.description || !newItem.postedBy || !newItem.contactNo) {
+    if (!newItem.title || !newItem.description || !newItem.contactNo) {
       return toast.warning("⚠️ Please fill all fields");
     }
+
+    const token = localStorage.getItem("token");
+    if (!token) return toast.error("Please login first!");
 
     if (loading) return;
     setLoading(true);
@@ -42,45 +43,52 @@ export default function Items() {
       const formData = new FormData();
       formData.append("title", newItem.title);
       formData.append("description", newItem.description);
-      formData.append("postedBy", newItem.postedBy);
       formData.append("contactNo", newItem.contactNo);
       if (newItem.image) formData.append("image", newItem.image);
 
       await axios.post(`${backendURL}/api/lostitems`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      setNewItem({ title: "", description: "", image: null, postedBy: "", contactNo: "" });
+      setNewItem({ title: "", description: "", image: null, contactNo: "" });
       setPreview(null);
-      toast.success(" Item added successfully!");
+      toast.success("✅ Item added successfully!");
       fetchItems();
     } catch (err) {
-      console.error(err);
-      toast.error(" Failed to add item");
+      toast.error("Failed to add item");
     } finally {
       setLoading(false);
     }
   };
 
   const markFound = async (id) => {
+    const token = localStorage.getItem("token");
+    if (!token) return toast.error("Please login first!");
     try {
-      await axios.patch(`${backendURL}/api/lostitems/${id}/found`);
+      await axios.patch(`${backendURL}/api/lostitems/${id}/found`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       toast.info("Marked as found");
       fetchItems();
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Failed to mark as found");
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
+    const token = localStorage.getItem("token");
+    if (!token) return toast.error("Please login first!");
     try {
-      await axios.delete(`${backendURL}/api/lostitems/${id}`);
+      await axios.delete(`${backendURL}/api/lostitems/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       toast.success("Item deleted successfully");
       fetchItems();
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Failed to delete item");
     }
   };
@@ -106,7 +114,9 @@ export default function Items() {
 
       {/* Add Item Form */}
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-black-200 mb-12">
-        <h2 className="text-3xl font-semibold text-center text-gray-700 mb-8">Report a Lost Item</h2>
+        <h2 className="text-3xl font-semibold text-center text-gray-700 mb-8">
+          Report a Lost Item
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           <input
             type="text"
@@ -124,13 +134,6 @@ export default function Items() {
           />
           <input
             type="text"
-            placeholder="Posted By"
-            value={newItem.postedBy}
-            onChange={(e) => setNewItem({ ...newItem, postedBy: e.target.value })}
-            className="w-full p-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
-          />
-          <input
-            type="text"
             placeholder="Contact No."
             value={newItem.contactNo}
             onChange={(e) => setNewItem({ ...newItem, contactNo: e.target.value })}
@@ -141,12 +144,7 @@ export default function Items() {
           <div className="flex flex-col items-center md:col-span-2 gap-4">
             <label className="cursor-pointer bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl shadow-md font-semibold">
               Choose Image
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
+              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
             </label>
             {preview && (
               <img
@@ -194,9 +192,10 @@ export default function Items() {
                 <div>
                   <h3 className="text-2xl font-bold text-gray-800 mb-2">{item.title}</h3>
                   <p className="text-gray-600 mb-2">{item.description}</p>
-                  <p className="text-gray-700 font-medium mb-1">Posted By: {item.postedBy}</p>
+                  <p className="text-gray-700 font-medium mb-1">
+                    Posted By: {item.postedBy?.username || "Anonymous"}
+                  </p>
                   <p className="text-gray-700 font-medium mb-1">📞: {item.contactNo}</p>
-                  {/* Timestamp */}
                   {item.createdAt && (
                     <p className="text-gray-500 text-sm mb-2">
                       Posted on: {new Date(item.createdAt).toLocaleString()}

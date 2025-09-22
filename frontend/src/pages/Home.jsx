@@ -11,10 +11,8 @@ export default function Home() {
   const fetchPosts = async () => {
     try {
       const { data } = await axios.get(`${backendURL}/api/feeds`);
-      console.log("Fetched posts:", data);
       setPosts(data);
     } catch (err) {
-      console.error("Error fetching posts:", err);
       toast.error("Failed to fetch posts");
     }
   };
@@ -37,7 +35,6 @@ export default function Home() {
       setPosts(posts.filter((post) => post._id !== id));
       toast.success("Post deleted successfully!");
     } catch (err) {
-      console.error("Error deleting post:", err.response || err);
       toast.error("Failed to delete post");
     }
   };

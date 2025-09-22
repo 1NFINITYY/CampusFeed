@@ -35,10 +35,8 @@ router.get("/", async (req, res) => {
     const feeds = await Feed.find()
       .sort({ createdAt: -1 })
       .populate("postedBy", "username"); // only username
-    console.log("Fetched feeds with user info:", feeds);
     res.json(feeds);
   } catch (err) {
-    console.error("Error fetching feeds:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -47,9 +45,6 @@ router.get("/", async (req, res) => {
 router.post("/", auth, upload.single("file"), async (req, res) => {
   try {
     const { title, description } = req.body;
-    console.log("Request body:", req.body);
-    console.log("Logged-in user:", req.user);
-
     if (!title || !description) {
       return res.status(400).json({ error: "Title and description are required" });
     }
@@ -78,12 +73,9 @@ router.post("/", auth, upload.single("file"), async (req, res) => {
       cloudinaryPublicId: req.file?.filename,
     });
 
-    console.log("Creating feed:", feed);
-
     await feed.save();
     res.status(201).json(feed);
   } catch (err) {
-    console.error("Error uploading feed:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -93,7 +85,6 @@ router.delete("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const feed = await Feed.findById(id);
-    console.log("Deleting feed:", feed);
 
     if (!feed) return res.status(404).json({ message: "Feed not found" });
 
@@ -113,15 +104,12 @@ router.delete("/:id", auth, async (req, res) => {
               ? "video"
               : "image",
         });
-      } catch (cloudErr) {
-        console.error("Cloudinary deletion error:", cloudErr);
-      }
+      } catch {}
     }
 
     await Feed.findByIdAndDelete(id);
     res.status(200).json({ message: "Feed deleted successfully" });
   } catch (err) {
-    console.error("Error deleting feed:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
