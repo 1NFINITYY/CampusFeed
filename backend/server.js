@@ -6,7 +6,7 @@ import { connectDB } from "./config/db.js";
 import { applyMiddleware } from "./middleware/middleware.js";
 
 import lostItemsRoutes from "./routes/lostItems.js";
-import feedsRoutes from "./routes/feeds.js";
+import feedsRoutes from "./routes/Feeds.js";
 import authRoutes from "./routes/auth.js";
 
 dotenv.config();

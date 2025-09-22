@@ -11,6 +11,7 @@ export default function Home() {
   const fetchPosts = async () => {
     try {
       const { data } = await axios.get(`${backendURL}/api/feeds`);
+      console.log("Fetched posts:", data);
       setPosts(data);
     } catch (err) {
       console.error("Error fetching posts:", err);
@@ -24,23 +25,27 @@ export default function Home() {
 
   // Delete a post
   const handleDelete = async (id) => {
+    const token = localStorage.getItem("token");
+    if (!token) return toast.error("Please login to delete posts!");
+
     if (!window.confirm("Are you sure you want to delete this post?")) return;
+
     try {
-      await axios.delete(`${backendURL}/api/feeds/${id}`);
+      await axios.delete(`${backendURL}/api/feeds/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setPosts(posts.filter((post) => post._id !== id));
       toast.success("Post deleted successfully!");
     } catch (err) {
-      console.error("Error deleting post:", err);
+      console.error("Error deleting post:", err.response || err);
       toast.error("Failed to delete post");
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue py-8 px-4 md:px-8">
-      {/* Toastify Container */}
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
 
-      {/* Header */}
       <div className="max-w-4xl mx-auto text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-3">
           Campus Feed
@@ -50,21 +55,19 @@ export default function Home() {
         </p>
       </div>
 
-      {/* No posts */}
       {posts.length === 0 && (
         <p className="text-center text-gray-500 text-lg">
           No posts yet. Be the first to share something!
         </p>
       )}
 
-      {/* Posts grid */}
       <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {posts.map((post) => (
           <div
             key={post._id}
             className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col transition-transform transform hover:-translate-y-1 hover:shadow-xl"
           >
-            {/* 🔹 File Preview */}
+            {/* File Preview */}
             {post.resourceType === "image" && post.fileUrl && (
               <img
                 src={post.fileUrl}
@@ -85,7 +88,7 @@ export default function Home() {
               <div className="flex items-center justify-center h-48 md:h-56 bg-gray-100">
                 <a
                   href={post.fileUrl}
-                  download={`${post.title || "document"}.pdf`} // frontend download attribute
+                  download={`${post.title || "document"}.pdf`}
                   className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition"
                 >
                   ⬇️ Download PDF
@@ -102,7 +105,7 @@ export default function Home() {
 
               {/* Posted By */}
               <p className="text-gray-500 text-sm mt-3 italic">
-                ✍️ Posted by: {post.postedBy || "Anonymous"}
+                ✍️ Posted by: {post.postedBy?.username || "Anonymous"}
               </p>
 
               {/* Timestamp */}

@@ -3,6 +3,7 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import Feed from "../models/Feed.js";
+import { auth } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ const storage = new CloudinaryStorage({
     const isPdf = file.mimetype === "application/pdf";
     return {
       folder: "campus-feed",
-      resource_type: isPdf ? "raw" : "auto", // PDFs as raw, others auto
+      resource_type: isPdf ? "raw" : "auto",
       public_id: file.originalname.split(".")[0],
     };
   },
@@ -28,29 +29,35 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-// GET all feeds
+// GET all feeds (populate username)
 router.get("/", async (req, res) => {
   try {
-    const feeds = await Feed.find().sort({ createdAt: -1 });
+    const feeds = await Feed.find()
+      .sort({ createdAt: -1 })
+      .populate("postedBy", "username"); // only username
+    console.log("Fetched feeds with user info:", feeds);
     res.json(feeds);
   } catch (err) {
+    console.error("Error fetching feeds:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST a feed
-router.post("/", upload.single("file"), async (req, res) => {
+// POST a feed (protected)
+router.post("/", auth, upload.single("file"), async (req, res) => {
   try {
-    const { title, description, postedBy } = req.body;
+    const { title, description } = req.body;
+    console.log("Request body:", req.body);
+    console.log("Logged-in user:", req.user);
 
-    if (!title || !description || !postedBy) {
-      return res.status(400).json({ error: "All fields are required" });
+    if (!title || !description) {
+      return res.status(400).json({ error: "Title and description are required" });
     }
 
     let fileUrl = req.file ? req.file.path : null;
 
     // Determine resourceType
-    let resourceType = "raw"; // default
+    let resourceType = "raw";
     if (req.file) {
       if (req.file.resource_type) resourceType = req.file.resource_type;
       else if (req.file.mimetype.startsWith("image")) resourceType = "image";
@@ -58,7 +65,6 @@ router.post("/", upload.single("file"), async (req, res) => {
       else if (req.file.mimetype === "application/pdf") resourceType = "raw";
     }
 
-    // Use correct URL for PDFs (raw delivery)
     if (resourceType === "raw" && fileUrl) {
       fileUrl = fileUrl.replace("/image/upload/", "/raw/upload/");
     }
@@ -66,11 +72,13 @@ router.post("/", upload.single("file"), async (req, res) => {
     const feed = new Feed({
       title,
       description,
-      postedBy,
+      postedBy: req.user.id, // automatically from JWT
       fileUrl,
       resourceType,
-      cloudinaryPublicId: req.file.filename, // save public_id for deletion
+      cloudinaryPublicId: req.file?.filename,
     });
+
+    console.log("Creating feed:", feed);
 
     await feed.save();
     res.status(201).json(feed);
@@ -80,15 +88,20 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 });
 
-// DELETE a feed and remove Cloudinary file
-router.delete("/:id", async (req, res) => {
+// DELETE a feed (protected)
+router.delete("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const feed = await Feed.findById(id);
+    console.log("Deleting feed:", feed);
 
     if (!feed) return res.status(404).json({ message: "Feed not found" });
 
-    // Delete file from Cloudinary if public_id exists
+    // Check ownership
+    if (feed.postedBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to delete this feed" });
+    }
+
     if (feed.cloudinaryPublicId) {
       const publicId = `campus-feed/${feed.cloudinaryPublicId}`;
       try {
@@ -106,9 +119,7 @@ router.delete("/:id", async (req, res) => {
     }
 
     await Feed.findByIdAndDelete(id);
-    res
-      .status(200)
-      .json({ message: "Feed and Cloudinary file deleted successfully" });
+    res.status(200).json({ message: "Feed deleted successfully" });
   } catch (err) {
     console.error("Error deleting feed:", err);
     res.status(500).json({ message: "Server error" });
