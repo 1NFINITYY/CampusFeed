@@ -1,67 +1,76 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");   // 👈 added
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
+    setLoading(true);
 
-    const res = await fetch("http://localhost:5000/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, email, phone, password }), // 👈 include phone
-    });
+    try {
+      const res = await fetch("http://localhost:5000/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, phone, password }),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      alert("Registration successful! Please login.");
-      navigate("/login"); // Redirect to login
-    } else {
-      alert(data.error || "Registration failed");
+      const data = await res.json();
+
+      if (res.ok) {
+        navigate("/login");
+      } else {
+        alert(data.error || "Registration failed");
+      }
+    } catch (err) {
+      alert("Something went wrong!");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 px-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-xl shadow-md w-96"
+        className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full"
       >
-        <h2 className="text-2xl font-bold mb-4 text-center">Register</h2>
+        <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
+          Register
+        </h2>
 
         <input
-          className="border p-2 w-full mb-3 rounded"
+          className="w-full p-4 mb-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
         />
-
         <input
-          className="border p-2 w-full mb-3 rounded"
+          className="w-full p-4 mb-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
           placeholder="Email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-
         <input
-          className="border p-2 w-full mb-3 rounded"
+          className="w-full p-4 mb-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
           placeholder="Phone Number"
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           required
         />
-
         <input
-          className="border p-2 w-full mb-3 rounded"
+          className="w-full p-4 mb-6 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
           placeholder="Password"
           type="password"
           value={password}
@@ -71,10 +80,22 @@ export default function Register() {
 
         <button
           type="submit"
-          className="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700"
+          disabled={loading}
+          className={`w-full py-3 rounded-2xl text-white font-semibold shadow-lg transition transform hover:scale-105 ${
+            loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          }`}
         >
-          Register
+          {loading ? "Registering..." : "Register"}
         </button>
+
+        <p className="text-sm text-center mt-4 text-gray-600">
+          Already have an account?{" "}
+          <Link to="/login" className="text-purple-600 hover:underline">
+            Login
+          </Link>
+        </p>
       </form>
     </div>
   );

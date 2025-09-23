@@ -5,12 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Items() {
   const [lostItems, setLostItems] = useState([]);
-  const [newItem, setNewItem] = useState({
-    title: "",
-    description: "",
-    image: null,
-    contactNo: "",
-  });
+  const [newItem, setNewItem] = useState({ title: "", description: "", image: null });
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const backendURL = "http://localhost:5000";
@@ -29,33 +24,27 @@ export default function Items() {
   }, []);
 
   const handleAddItem = async () => {
-    if (!newItem.title || !newItem.description || !newItem.contactNo) {
-      return toast.warning("⚠️ Please fill all fields");
+    if (!newItem.title || !newItem.description) {
+      return toast.warning(" Please fill all fields");
     }
 
     const token = localStorage.getItem("token");
     if (!token) return toast.error("Please login first!");
 
-    if (loading) return;
     setLoading(true);
-
     try {
       const formData = new FormData();
       formData.append("title", newItem.title);
       formData.append("description", newItem.description);
-      formData.append("contactNo", newItem.contactNo);
       if (newItem.image) formData.append("image", newItem.image);
 
       await axios.post(`${backendURL}/api/lostitems`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
       });
 
-      setNewItem({ title: "", description: "", image: null, contactNo: "" });
+      setNewItem({ title: "", description: "", image: null });
       setPreview(null);
-      toast.success("✅ Item added successfully!");
+      toast.success(" Item added successfully!");
       fetchItems();
     } catch (err) {
       toast.error("Failed to add item");
@@ -132,13 +121,6 @@ export default function Items() {
             onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
             className="w-full p-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
           />
-          <input
-            type="text"
-            placeholder="Contact No."
-            value={newItem.contactNo}
-            onChange={(e) => setNewItem({ ...newItem, contactNo: e.target.value })}
-            className="w-full p-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
-          />
 
           {/* Image Upload & Button */}
           <div className="flex flex-col items-center md:col-span-2 gap-4">
@@ -195,7 +177,9 @@ export default function Items() {
                   <p className="text-gray-700 font-medium mb-1">
                     Posted By: {item.postedBy?.username || "Anonymous"}
                   </p>
-                  <p className="text-gray-700 font-medium mb-1">📞: {item.contactNo}</p>
+                  {item.postedBy?.phone && (
+                    <p className="text-gray-700 font-medium mb-1">📞: {item.postedBy.phone}</p>
+                  )}
                   {item.createdAt && (
                     <p className="text-gray-500 text-sm mb-2">
                       Posted on: {new Date(item.createdAt).toLocaleString()}
