@@ -39,6 +39,12 @@ export default function Navbar() {
               >
                 Add Feed
               </Link>
+              <Link
+                to="/profile"
+                className="text-gray-700 hover:text-black transition"
+              >
+                Profile
+              </Link>
               <button
                 onClick={handleLogout}
                 className="text-red-600 hover:text-red-800 transition"
@@ -93,6 +99,13 @@ export default function Navbar() {
                 className="text-gray-700 hover:text-black transition"
               >
                 Add Feed
+              </Link>
+              <Link
+                to="/profile"
+                onClick={() => setOpen(false)}
+                className="text-gray-700 hover:text-black transition"
+              >
+                Profile
               </Link>
               <button
                 onClick={() => {

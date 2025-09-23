@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       match: [/^\d{10}$/, "Phone number must be 10 digits"], // basic validation
     },
+    profilePic: {
+      type: String,
+      default:
+        "https://res.cloudinary.com/demo/image/upload/v1699999999/default-avatar.png",
+    },
   },
   { timestamps: true }
 );

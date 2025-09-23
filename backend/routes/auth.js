@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 const router = express.Router();
-const SECRET = process.env.JWT_SECRET;// ⚠️ move to process.env in production
+const SECRET = process.env.JWT_SECRET; // ⚠️ keep secret in env
 
 // Register
 router.post("/register", async (req, res) => {
@@ -18,7 +18,13 @@ router.post("/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password: hashedPassword, phone });
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      phone,
+      profilePic: "", // 👈 default empty string for now
+    });
     await user.save();
 
     res.status(201).json({ message: "User registered successfully" });
@@ -43,13 +49,17 @@ router.post("/login", async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        phone: user.phone, // 📞 include phone in token
+        phone: user.phone,
+        profilePic: user.profilePic || "", // 🖼 include profile pic
       },
       SECRET,
       { expiresIn: "1h" }
     );
 
-    res.json({ token });
+    res.json({
+      token,
+      profilePic: user.profilePic || "", // also send separately
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
