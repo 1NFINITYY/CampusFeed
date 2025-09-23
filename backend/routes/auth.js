@@ -4,20 +4,21 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 const router = express.Router();
-const SECRET = "supersecret"; // ⚠️ move to process.env in production
+const SECRET = process.env.JWT_SECRET;// ⚠️ move to process.env in production
 
 // Register
 router.post("/register", async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, phone } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    // Check existing user by email or phone
+    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
     if (existingUser) {
-      return res.status(400).json({ error: "Email already in use" });
+      return res.status(400).json({ error: "Email or phone already in use" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password: hashedPassword });
+    const user = new User({ username, email, password: hashedPassword, phone });
     await user.save();
 
     res.status(201).json({ message: "User registered successfully" });
@@ -38,7 +39,12 @@ router.post("/login", async (req, res) => {
     if (!match) return res.status(401).json({ error: "Invalid credentials" });
 
     const token = jwt.sign(
-      { id: user._id, username: user.username, email: user.email },
+      {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone, // 📞 include phone in token
+      },
       SECRET,
       { expiresIn: "1h" }
     );

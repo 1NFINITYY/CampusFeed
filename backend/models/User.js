@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6, // bcrypt will hash this
     },
+    phone: {
+      type: String,
+      required: true,
+      match: [/^\d{10}$/, "Phone number must be 10 digits"], // basic validation
+    },
   },
   { timestamps: true }
 );

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 export default function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");   // 👈 added
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
@@ -13,7 +14,7 @@ export default function Register() {
     const res = await fetch("http://localhost:5000/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, phone, password }), // 👈 include phone
     });
 
     const data = await res.json();
@@ -32,6 +33,7 @@ export default function Register() {
         className="bg-white p-6 rounded-xl shadow-md w-96"
       >
         <h2 className="text-2xl font-bold mb-4 text-center">Register</h2>
+
         <input
           className="border p-2 w-full mb-3 rounded"
           placeholder="Username"
@@ -39,6 +41,7 @@ export default function Register() {
           onChange={(e) => setUsername(e.target.value)}
           required
         />
+
         <input
           className="border p-2 w-full mb-3 rounded"
           placeholder="Email"
@@ -47,6 +50,16 @@ export default function Register() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
+
+        <input
+          className="border p-2 w-full mb-3 rounded"
+          placeholder="Phone Number"
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          required
+        />
+
         <input
           className="border p-2 w-full mb-3 rounded"
           placeholder="Password"
@@ -55,6 +68,7 @@ export default function Register() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+
         <button
           type="submit"
           className="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700"

@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = "supersecret"; // ⚠️ move to process.env in production
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) throw new Error("JWT_SECRET is not defined in .env");
+ // ⚠️ move to process.env in production
 
 export const auth = (req, res, next) => {
   const header = req.headers["authorization"];
