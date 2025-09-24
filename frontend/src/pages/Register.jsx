@@ -6,6 +6,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // ✅ toggle state
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -69,14 +70,25 @@ export default function Register() {
           onChange={(e) => setPhone(e.target.value)}
           required
         />
-        <input
-          className="w-full p-4 mb-6 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+
+        {/* Password field with toggle */}
+        <div className="relative mb-6">
+          <input
+            className="w-full p-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700 pr-12"
+            placeholder="Password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          >
+            {showPassword ? "🙈" : "👁️"}
+          </button>
+        </div>
 
         <button
           type="submit"

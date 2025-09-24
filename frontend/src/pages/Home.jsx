@@ -21,6 +21,25 @@ export default function Home() {
     fetchPosts();
   }, []);
 
+  // Function to download PDF with correct extension
+  const handleDownload = async (fileUrl, fileName) => {
+    try {
+      const res = await fetch(fileUrl);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${fileName || "document"}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed", err);
+      toast.error("Failed to download file");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue py-8 px-4 md:px-8">
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
@@ -65,13 +84,14 @@ export default function Home() {
 
             {post.resourceType === "raw" && post.fileUrl && (
               <div className="flex items-center justify-center h-48 md:h-56 bg-gray-100">
-                <a
-                  href={post.fileUrl}
-                  download={`${post.title || "document"}.pdf`}
+                <button
+                  onClick={() =>
+                    handleDownload(post.fileUrl, post.title)
+                  }
                   className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition"
                 >
                   ⬇️ Download PDF
-                </a>
+                </button>
               </div>
             )}
 

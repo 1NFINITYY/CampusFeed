@@ -88,6 +88,25 @@ export default function Profile() {
     }
   };
 
+  // ✅ Function to download PDFs with proper extension
+  const handleDownloadPDF = async (fileUrl, fileName) => {
+    try {
+      const res = await fetch(fileUrl);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${fileName || "document"}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed", err);
+      toast.error("Failed to download file");
+    }
+  };
+
   if (!profile) return <p className="text-center mt-10 text-gray-700">Loading...</p>;
 
   const { user, feeds, lostItems } = profile;
@@ -174,13 +193,12 @@ export default function Profile() {
 
                   {feed.resourceType === "raw" && feed.fileUrl && (
                     <div className="flex items-center justify-center h-48 bg-gray-100 mb-3 rounded-xl">
-                      <a
-                        href={feed.fileUrl}
-                        download={`${feed.title || "document"}.pdf`}
+                      <button
+                        onClick={() => handleDownloadPDF(feed.fileUrl, feed.title)}
                         className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition"
                       >
                         ⬇️ Download PDF
-                      </a>
+                      </button>
                     </div>
                   )}
 
