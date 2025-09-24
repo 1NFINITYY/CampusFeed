@@ -11,7 +11,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   // ✅ Backend URL for local development
-  const backendURL = "http://localhost:5000";
+  const backendURL = "https://campusfeed-backend.onrender.com/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

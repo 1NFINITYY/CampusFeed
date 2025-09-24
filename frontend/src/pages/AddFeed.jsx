@@ -14,7 +14,7 @@ export default function AddFeed() {
   const [itemPreview, setItemPreview] = useState(null);
   const [itemLoading, setItemLoading] = useState(false);
 
-  const backendURL = "http://localhost:5000";
+  const backendURL = "https://campusfeed-backend.onrender.com/";
 
   /*** FEED FUNCTIONS ***/
   const handleAddFeed = async () => {

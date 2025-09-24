@@ -7,7 +7,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState("feeds"); // "feeds" or "lostItems"
-  const backendURL = "http://localhost:5000";
+  const backendURL = "https://campusfeed-backend.onrender.com/";
 
   const fetchProfile = async () => {
     const token = localStorage.getItem("token");
