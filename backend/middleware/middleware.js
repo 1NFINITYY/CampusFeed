@@ -3,12 +3,26 @@ import express from "express";
 import cors from "cors";
 
 export const applyMiddleware = (app) => {
-  // Enable CORS for frontend
-  app.use(cors({ origin: "https://campus-feed-nine.vercel.app" }));
+  const allowedOrigins = [
+    "http://localhost:5173", // ✅ local dev (Vite)
+    "http://localhost:3000", // ✅ local dev (CRA)
+    "https://campus-feed-nine.vercel.app", // ✅ old Vercel deployment
+    "https://campus-feed-infinity.vercel.app", // ✅ new Vercel deployment
+  ];
 
-  // Parse JSON request bodies
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // allow requests with no origin (like curl or Postman)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error("Not allowed by CORS"));
+      },
+      credentials: true, // if using cookies or auth headers
+    })
+  );
+
   app.use(express.json());
-
-  // If you want to serve static files later (optional)
-  // app.use("/uploads", express.static("uploads"));
 };
