@@ -5,16 +5,11 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AddFeed() {
-  const [newFeed, setNewFeed] = useState({
-    title: "",
-    description: "",
-    file: null,
-  });
+  const [newFeed, setNewFeed] = useState({ title: "", description: "", file: null });
   const [feedPreview, setFeedPreview] = useState(null);
   const [feedPreviewType, setFeedPreviewType] = useState(null);
   const [feedLoading, setFeedLoading] = useState(false);
 
-  // For Lost Items
   const [newItem, setNewItem] = useState({ title: "", description: "", image: null });
   const [itemPreview, setItemPreview] = useState(null);
   const [itemLoading, setItemLoading] = useState(false);
@@ -23,9 +18,8 @@ export default function AddFeed() {
 
   /*** FEED FUNCTIONS ***/
   const handleAddFeed = async () => {
-    if (!newFeed.title || !newFeed.description) {
-      return toast.warning("Please fill all fields for feed");
-    }
+    if (!newFeed.title || !newFeed.description) return toast.warning("Please fill all fields for feed");
+    if (!newFeed.file) return toast.warning("Please choose a file for the feed");
 
     const token = localStorage.getItem("token");
     if (!token) return toast.error("Please login first!");
@@ -35,7 +29,7 @@ export default function AddFeed() {
       const formData = new FormData();
       formData.append("title", newFeed.title);
       formData.append("description", newFeed.description);
-      if (newFeed.file) formData.append("file", newFeed.file);
+      formData.append("file", newFeed.file);
 
       await axios.post(`${backendURL}/api/feeds`, formData, {
         headers: {
@@ -73,9 +67,8 @@ export default function AddFeed() {
 
   /*** LOST ITEM FUNCTIONS ***/
   const handleAddItem = async () => {
-    if (!newItem.title || !newItem.description) {
-      return toast.warning("Please fill all fields for lost item");
-    }
+    if (!newItem.title || !newItem.description) return toast.warning("Please fill all fields for lost item");
+    if (!newItem.image) return toast.warning("Please choose an image for the lost item");
 
     const token = localStorage.getItem("token");
     if (!token) return toast.error("Please login first!");
@@ -85,7 +78,7 @@ export default function AddFeed() {
       const formData = new FormData();
       formData.append("title", newItem.title);
       formData.append("description", newItem.description);
-      if (newItem.image) formData.append("image", newItem.image);
+      formData.append("image", newItem.image);
 
       await axios.post(`${backendURL}/api/lostitems`, formData, {
         headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
@@ -126,9 +119,7 @@ export default function AddFeed() {
 
       {/* Manual Feed Form */}
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border mb-12">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-          📝 Share Something
-        </h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">📝 Share Something</h2>
         <div className="flex flex-col gap-4">
           <input
             type="text"
@@ -145,7 +136,6 @@ export default function AddFeed() {
             className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400"
           />
 
-          {/* Feed File Upload */}
           <div className="flex flex-col items-center gap-3">
             <input
               type="file"
@@ -157,7 +147,7 @@ export default function AddFeed() {
             <button
               type="button"
               onClick={() => document.getElementById("feedFileInput").click()}
-              className="bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-2 rounded-xl font-medium shadow-md hover:from-green-600 hover:to-green-800 transition"
+              className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:from-green-600 hover:to-green-800 transition"
             >
               📂 {newFeed.file ? "Change File" : "Choose File"}
             </button>
@@ -176,7 +166,7 @@ export default function AddFeed() {
           <button
             onClick={handleAddFeed}
             disabled={feedLoading}
-            className={`bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold py-3 rounded-xl shadow-md transition transform hover:scale-105 ${
+            className={`w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold py-3 rounded-xl shadow-md transition transform hover:scale-105 ${
               feedLoading ? "opacity-50 cursor-not-allowed" : "hover:from-purple-600 hover:to-pink-600"
             }`}
           >
@@ -187,42 +177,37 @@ export default function AddFeed() {
 
       {/* Add Lost Item Form */}
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-          🏷️ Report a Lost Item
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">🏷️ Report a Lost Item</h2>
+        <div className="flex flex-col gap-4">
           <input
             type="text"
             placeholder="Item Name"
             value={newItem.title}
             onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-            className="w-full p-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
+            className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400"
           />
           <textarea
-            rows="3"
             placeholder="Description / Location"
+            rows="4"
             value={newItem.description}
             onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-            className="w-full p-4 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-700"
+            className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400"
           />
 
-          <div className="flex flex-col items-center md:col-span-2 gap-4">
-            <label className="cursor-pointer bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl shadow-md font-semibold">
+          <div className="flex flex-col items-center gap-3">
+            <label className="w-full cursor-pointer bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium shadow-md text-center hover:from-purple-600 hover:to-pink-600 transition">
               Choose Image
               <input type="file" accept="image/*" onChange={handleItemImageChange} className="hidden" />
             </label>
             {itemPreview && (
-              <img
-                src={itemPreview}
-                alt="Preview"
-                className="w-64 h-64 object-cover rounded-2xl shadow-md"
-              />
+              <img src={itemPreview} alt="Preview" className="w-48 h-48 object-cover rounded-xl shadow-md" />
             )}
+
             <button
               onClick={handleAddItem}
               disabled={itemLoading}
-              className={`bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-bold px-8 py-3 rounded-2xl shadow-lg transition transform hover:scale-105 ${
-                itemLoading ? "opacity-50 cursor-not-allowed" : ""
+              className={`w-full bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold py-3 rounded-xl shadow-md transition transform hover:scale-105 ${
+                itemLoading ? "opacity-50 cursor-not-allowed" : "hover:from-green-600 hover:to-teal-600"
               }`}
             >
               {itemLoading ? "Uploading..." : "Add Item"}

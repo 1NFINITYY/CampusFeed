@@ -6,6 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState("feeds"); // "feeds" or "lostItems"
   const backendURL = "http://localhost:5000";
 
   const fetchProfile = async () => {
@@ -26,7 +27,6 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
-  // Handle profile picture change
   const handleProfilePicChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -47,7 +47,6 @@ export default function Profile() {
       });
 
       toast.success("Profile picture updated!");
-      // Update profile state with new picture
       setProfile((prev) => ({
         ...prev,
         user: { ...prev.user, profilePic: res.data.profilePic },
@@ -89,7 +88,7 @@ export default function Profile() {
     }
   };
 
-  if (!profile) return <p className="text-center mt-10">Loading...</p>;
+  if (!profile) return <p className="text-center mt-10 text-gray-700">Loading...</p>;
 
   const { user, feeds, lostItems } = profile;
 
@@ -97,16 +96,16 @@ export default function Profile() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-10 px-4">
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
 
-      {/* User Info */}
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl mb-10 border border-pink-200 text-center">
-        <img
-          src={user.profilePic || "https://via.placeholder.com/150"}
-          alt="Profile"
-          className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
-        />
-        <div className="mb-4">
-          <label className="cursor-pointer bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl shadow-md font-semibold">
-            {uploading ? "Uploading..." : "Change Profile Picture"}
+      {/* Profile Header */}
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-2xl mb-6 border border-purple-200 text-center transition-transform hover:scale-105">
+        <div className="relative w-36 h-36 mx-auto mb-4">
+          <img
+            src={user.profilePic || "https://via.placeholder.com/150"}
+            alt="Profile"
+            className="w-36 h-36 rounded-full object-cover border-4 border-gradient-to-r from-purple-500 to-pink-500 shadow-lg transition-transform hover:scale-110"
+          />
+          <label className="absolute bottom-0 right-0 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-3 py-1 rounded-full shadow-md cursor-pointer text-sm font-semibold">
+            {uploading ? "Uploading..." : "Change"}
             <input
               type="file"
               accept="image/*"
@@ -116,83 +115,130 @@ export default function Profile() {
             />
           </label>
         </div>
-        <h2 className="text-3xl font-bold mb-2">{user.username}</h2>
+        <h2 className="text-3xl font-bold mb-2 text-gray-800">{user.username}</h2>
         <p className="text-gray-600">{user.email}</p>
         <p className="text-gray-600">📞 {user.phone}</p>
       </div>
 
-      {/* User Feeds */}
-      <div className="max-w-4xl mx-auto mb-10">
-        <h3 className="text-2xl font-semibold mb-6 text-gray-700">My Feeds</h3>
-        {feeds.length === 0 ? (
-          <p className="text-gray-600">No feeds posted yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {feeds.map((feed) => (
-              <div
-                key={feed._id}
-                className="bg-white p-4 rounded-2xl shadow-md border border-pink-200 flex flex-col"
-              >
-                {feed.fileUrl && (
-                  <img
-                    src={feed.fileUrl}
-                    alt={feed.title}
-                    className="w-full h-48 object-cover rounded-xl mb-3"
-                  />
-                )}
-                <h4 className="font-bold text-gray-800">{feed.title}</h4>
-                <p className="text-gray-600 flex-grow">{feed.description}</p>
-                <button
-                  onClick={() => handleDeleteFeed(feed._id)}
-                  className="mt-3 bg-gradient-to-r from-red-500 to-red-700 text-white py-2 rounded-xl shadow-md hover:from-red-600 hover:to-red-800 transition"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Tab Buttons */}
+      <div className="max-w-3xl mx-auto flex justify-center gap-4 mb-8">
+        <button
+          onClick={() => setActiveTab("feeds")}
+          className={`px-6 py-2 rounded-xl font-semibold transition ${
+            activeTab === "feeds"
+              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+              : "bg-white border border-purple-300 text-gray-700 hover:shadow-md"
+          }`}
+        >
+          My Feeds
+        </button>
+        <button
+          onClick={() => setActiveTab("lostItems")}
+          className={`px-6 py-2 rounded-xl font-semibold transition ${
+            activeTab === "lostItems"
+              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+              : "bg-white border border-purple-300 text-gray-700 hover:shadow-md"
+          }`}
+        >
+          My Lost Items
+        </button>
       </div>
 
-      {/* User Lost Items */}
-      <div className="max-w-4xl mx-auto mb-10">
-        <h3 className="text-2xl font-semibold mb-6 text-gray-700">My Lost Items</h3>
-        {lostItems.length === 0 ? (
-          <p className="text-gray-600">No lost items posted yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {lostItems.map((item) => (
-              <div
-                key={item._id}
-                className="bg-white p-4 rounded-2xl shadow-md border border-pink-200 flex flex-col"
-              >
-                {item.imageUrl && (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-full h-48 object-cover rounded-xl mb-3"
-                  />
-                )}
-                <h4 className="font-bold text-gray-800">{item.title}</h4>
-                <p className="text-gray-600 flex-grow">{item.description}</p>
-                <span
-                  className={`font-semibold block mb-2 ${
-                    item.status === "lost" ? "text-red-500" : "text-green-500"
-                  }`}
+      {/* Feeds Section */}
+      {activeTab === "feeds" && (
+        <div className="max-w-5xl mx-auto mb-12">
+          {feeds.length === 0 ? (
+            <p className="text-gray-600 text-center">No feeds posted yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {feeds.map((feed) => (
+                <div
+                  key={feed._id}
+                  className="bg-white p-5 rounded-2xl shadow-lg border border-purple-100 flex flex-col transition-transform hover:scale-105 hover:shadow-2xl"
                 >
-                  Status: {item.status}
-                </span>
-                <button
-                  onClick={() => handleDeleteLostItem(item._id)}
-                  className="bg-gradient-to-r from-red-500 to-red-700 text-white py-2 rounded-xl shadow-md hover:from-red-600 hover:to-red-800 transition"
+                  {feed.resourceType === "image" && feed.fileUrl && (
+                    <img
+                      src={feed.fileUrl}
+                      alt={feed.title}
+                      className="w-full h-52 object-cover rounded-xl mb-3"
+                    />
+                  )}
+
+                  {feed.resourceType === "video" && feed.fileUrl && (
+                    <video
+                      src={feed.fileUrl}
+                      controls
+                      className="w-full h-52 object-cover rounded-xl mb-3"
+                    />
+                  )}
+
+                  {feed.resourceType === "raw" && feed.fileUrl && (
+                    <div className="flex items-center justify-center h-48 bg-gray-100 mb-3 rounded-xl">
+                      <a
+                        href={feed.fileUrl}
+                        download={`${feed.title || "document"}.pdf`}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition"
+                      >
+                        ⬇️ Download PDF
+                      </a>
+                    </div>
+                  )}
+
+                  <h4 className="font-bold text-gray-800 mb-1">{feed.title}</h4>
+                  <p className="text-gray-600 flex-grow">{feed.description}</p>
+                  <button
+                    onClick={() => handleDeleteFeed(feed._id)}
+                    className="mt-3 bg-gradient-to-r from-red-500 to-red-700 text-white py-2 rounded-xl shadow-md hover:from-red-600 hover:to-red-800 transition transform hover:scale-105"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Lost Items Section */}
+      {activeTab === "lostItems" && (
+        <div className="max-w-5xl mx-auto mb-12">
+          {lostItems.length === 0 ? (
+            <p className="text-gray-600 text-center">No lost items posted yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {lostItems.map((item) => (
+                <div
+                  key={item._id}
+                  className="bg-white p-5 rounded-2xl shadow-lg border border-purple-100 flex flex-col transition-transform hover:scale-105 hover:shadow-2xl"
                 >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                  {item.imageUrl && (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      className="w-full h-52 object-cover rounded-xl mb-3"
+                    />
+                  )}
+                  <h4 className="font-bold text-gray-800 mb-1">{item.title}</h4>
+                  <p className="text-gray-600 flex-grow">{item.description}</p>
+                  <span
+                    className={`font-semibold mb-2 ${
+                      item.status === "lost" ? "text-red-500" : "text-green-500"
+                    }`}
+                  >
+                    Status: {item.status}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteLostItem(item._id)}
+                    className="bg-gradient-to-r from-red-500 to-red-700 text-white py-2 rounded-xl shadow-md hover:from-red-600 hover:to-red-800 transition transform hover:scale-105"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
