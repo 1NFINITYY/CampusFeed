@@ -6,21 +6,27 @@ import "react-toastify/dist/ReactToastify.css";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // ✅ toggle state
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ Backend URL for local development
+  const backendURL = "http://localhost:5000";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
+
     try {
-      const res = await fetch("http://localhost:5000/auth/login", {
+      const res = await fetch(`${backendURL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+
       const data = await res.json();
+
       if (res.ok && data.token) {
         localStorage.setItem("token", data.token);
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -54,6 +60,8 @@ export default function Login() {
           required
           className="w-full p-4 rounded-xl border border-pink-200 mb-4 focus:outline-none focus:ring-2 focus:ring-purple-400"
         />
+
+        {/* Password field with toggle */}
         <div className="relative mb-4">
           <input
             type={showPassword ? "text" : "password"}
@@ -71,6 +79,7 @@ export default function Login() {
             {showPassword ? "🙈" : "👁️"}
           </button>
         </div>
+
         <button
           type="submit"
           disabled={loading}
@@ -82,6 +91,7 @@ export default function Login() {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
+
         <p className="text-sm text-center mt-4 text-gray-700">
           Don’t have an account?{" "}
           <Link to="/register" className="text-pink-600 hover:underline">
