@@ -25,14 +25,16 @@ export default function Navbar() {
             Feed
           </Link>
 
-          {token ? (
-            <>
-              <Link
+          <Link
                 to="/items"
                 className="text-gray-700 hover:text-black transition"
-              >
+          >
                 Items
-              </Link>
+          </Link>
+
+          {token ? (
+            <>
+              
               <Link
                 to="/AddFeed"
                 className="text-gray-700 hover:text-black transition"
@@ -83,16 +85,17 @@ export default function Navbar() {
           >
             Feed
           </Link>
-
-          {token ? (
-            <>
-              <Link
+          <Link
                 to="/items"
                 onClick={() => setOpen(false)}
                 className="text-gray-700 hover:text-black transition"
-              >
+          >
                 Items
-              </Link>
+          </Link>
+
+          {token ? (
+            <>
+              
               <Link
                 to="/AddFeed"
                 onClick={() => setOpen(false)}

@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const backendURL = "http://localhost:5000";
 
   const fetchProfile = async () => {
@@ -25,6 +26,69 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
+  // Handle profile picture change
+  const handleProfilePicChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return toast.error("Please login first!");
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("profilePic", file);
+
+      const res = await axios.post(`${backendURL}/profile/picture`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      toast.success("Profile picture updated!");
+      // Update profile state with new picture
+      setProfile((prev) => ({
+        ...prev,
+        user: { ...prev.user, profilePic: res.data.profilePic },
+      }));
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to update profile picture");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteFeed = async (feedId) => {
+    if (!window.confirm("Are you sure you want to delete this feed?")) return;
+
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`${backendURL}/api/feeds/${feedId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Feed deleted successfully!");
+      fetchProfile();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to delete feed");
+    }
+  };
+
+  const handleDeleteLostItem = async (itemId) => {
+    if (!window.confirm("Are you sure you want to delete this lost item?")) return;
+
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`${backendURL}/api/lostitems/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Lost item deleted successfully!");
+      fetchProfile();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to delete lost item");
+    }
+  };
+
   if (!profile) return <p className="text-center mt-10">Loading...</p>;
 
   const { user, feeds, lostItems } = profile;
@@ -40,6 +104,18 @@ export default function Profile() {
           alt="Profile"
           className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
         />
+        <div className="mb-4">
+          <label className="cursor-pointer bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl shadow-md font-semibold">
+            {uploading ? "Uploading..." : "Change Profile Picture"}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleProfilePicChange}
+              className="hidden"
+              disabled={uploading}
+            />
+          </label>
+        </div>
         <h2 className="text-3xl font-bold mb-2">{user.username}</h2>
         <p className="text-gray-600">{user.email}</p>
         <p className="text-gray-600">📞 {user.phone}</p>
@@ -53,7 +129,10 @@ export default function Profile() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {feeds.map((feed) => (
-              <div key={feed._id} className="bg-white p-4 rounded-2xl shadow-md border border-pink-200">
+              <div
+                key={feed._id}
+                className="bg-white p-4 rounded-2xl shadow-md border border-pink-200 flex flex-col"
+              >
                 {feed.fileUrl && (
                   <img
                     src={feed.fileUrl}
@@ -62,7 +141,13 @@ export default function Profile() {
                   />
                 )}
                 <h4 className="font-bold text-gray-800">{feed.title}</h4>
-                <p className="text-gray-600">{feed.description}</p>
+                <p className="text-gray-600 flex-grow">{feed.description}</p>
+                <button
+                  onClick={() => handleDeleteFeed(feed._id)}
+                  className="mt-3 bg-gradient-to-r from-red-500 to-red-700 text-white py-2 rounded-xl shadow-md hover:from-red-600 hover:to-red-800 transition"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>
@@ -77,7 +162,10 @@ export default function Profile() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {lostItems.map((item) => (
-              <div key={item._id} className="bg-white p-4 rounded-2xl shadow-md border border-pink-200">
+              <div
+                key={item._id}
+                className="bg-white p-4 rounded-2xl shadow-md border border-pink-200 flex flex-col"
+              >
                 {item.imageUrl && (
                   <img
                     src={item.imageUrl}
@@ -86,10 +174,20 @@ export default function Profile() {
                   />
                 )}
                 <h4 className="font-bold text-gray-800">{item.title}</h4>
-                <p className="text-gray-600">{item.description}</p>
-                <span className={`font-semibold ${item.status === "lost" ? "text-red-500" : "text-green-500"}`}>
+                <p className="text-gray-600 flex-grow">{item.description}</p>
+                <span
+                  className={`font-semibold block mb-2 ${
+                    item.status === "lost" ? "text-red-500" : "text-green-500"
+                  }`}
+                >
                   Status: {item.status}
                 </span>
+                <button
+                  onClick={() => handleDeleteLostItem(item._id)}
+                  className="bg-gradient-to-r from-red-500 to-red-700 text-white py-2 rounded-xl shadow-md hover:from-red-600 hover:to-red-800 transition"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>

@@ -20,23 +20,19 @@ const upload = multer({ storage });
 
 // GET all lost items with postedBy username + phone
 router.get("/", async (req, res) => {
-  console.log("[GET] /api/lostitems called");
+
   try {
     const items = await LostItem.find()
       .sort({ createdAt: -1 })
       .populate("postedBy", "username phone");
     res.json(items);
   } catch (err) {
-    console.error("[GET] Error fetching lost items:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
 // POST new lost item (protected)
 router.post("/", auth, upload.single("image"), async (req, res) => {
-  console.log("[POST] /api/lostitems called by", req.user.id);
-  console.log("[POST] body:", req.body);
-  console.log("[POST] file:", !!req.file);
 
   try {
     const { title, description } = req.body;
@@ -56,17 +52,17 @@ router.post("/", auth, upload.single("image"), async (req, res) => {
     });
 
     const saved = await item.save();
-    console.log("[POST] Lost item created:", saved._id);
+
     res.status(201).json(saved);
   } catch (err) {
-    console.error("[POST] Error creating lost item:", err);
+
     res.status(500).json({ error: err.message });
   }
 });
 
 // PATCH mark as found
 router.patch("/:id/found", auth, async (req, res) => {
-  console.log(`[PATCH] /api/lostitems/${req.params.id}/found called`);
+
   try {
     const item = await LostItem.findByIdAndUpdate(
       req.params.id,
@@ -76,14 +72,14 @@ router.patch("/:id/found", auth, async (req, res) => {
     if (!item) return res.status(404).json({ error: "Item not found" });
     res.json(item);
   } catch (err) {
-    console.error(`[PATCH] Error marking item found:`, err);
+
     res.status(500).json({ error: err.message });
   }
 });
 
 // DELETE lost item
 router.delete("/:id", auth, async (req, res) => {
-  console.log(`[DELETE] /api/lostitems/${req.params.id} called by ${req.user.id}`);
+  
   try {
     const item = await LostItem.findById(req.params.id);
     if (!item) return res.status(404).json({ error: "Item not found" });
@@ -98,14 +94,14 @@ router.delete("/:id", auth, async (req, res) => {
           resource_type: "image",
         });
       } catch (err) {
-        console.error("[DELETE] Cloudinary error:", err);
+        return res.status(err.status || 500).json({ error: err.message || "Cloudinary deletion failed" });
       }
     }
 
     await LostItem.findByIdAndDelete(req.params.id);
     res.json({ message: "Item deleted successfully" });
   } catch (err) {
-    console.error("[DELETE] Error deleting item:", err);
+
     res.status(500).json({ error: err.message });
   }
 });

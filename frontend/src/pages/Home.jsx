@@ -21,24 +21,6 @@ export default function Home() {
     fetchPosts();
   }, []);
 
-  // Delete a post
-  const handleDelete = async (id) => {
-    const token = localStorage.getItem("token");
-    if (!token) return toast.error("Please login to delete posts!");
-
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
-
-    try {
-      await axios.delete(`${backendURL}/api/feeds/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setPosts(posts.filter((post) => post._id !== id));
-      toast.success("Post deleted successfully!");
-    } catch (err) {
-      toast.error("Failed to delete post");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue py-8 px-4 md:px-8">
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
@@ -111,13 +93,6 @@ export default function Home() {
                   🕒 {new Date(post.createdAt).toLocaleString()}
                 </p>
               )}
-
-              <button
-                onClick={() => handleDelete(post._id)}
-                className="mt-4 self-start bg-red-500 hover:bg-red-600 text-white text-sm py-1.5 px-4 rounded-lg shadow-sm transition transform hover:scale-105"
-              >
-                Delete
-              </button>
             </div>
           </div>
         ))}

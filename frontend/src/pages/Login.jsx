@@ -26,8 +26,8 @@ export default function Login() {
       if (res.ok && data.token) {
         localStorage.setItem("token", data.token);
         
-        // ✅ Artificial delay of 1.5 seconds
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // ✅ Artificial delay of 0.5 second
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         navigate("/"); // Redirect to home/dashboard
       } else {

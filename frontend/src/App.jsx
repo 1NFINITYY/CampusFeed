@@ -17,6 +17,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/items" element={<Items />} />
 
         {/* Protected routes */}
         <Route
@@ -24,14 +25,6 @@ function App() {
           element={
             <ProtectedRoute>
               <AddFeed />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/items"
-          element={
-            <ProtectedRoute>
-              <Items />
             </ProtectedRoute>
           }
         />
