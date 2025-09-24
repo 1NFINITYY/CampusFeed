@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
-  const backendURL = "https://campusfeed-backend.onrender.com/"; // backend API
+  const backendURL = "https://campusfeed-backend.onrender.com"; // backend API
 
   // Fetch posts from backend
   const fetchPosts = async () => {

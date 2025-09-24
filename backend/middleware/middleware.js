@@ -4,7 +4,7 @@ import cors from "cors";
 
 export const applyMiddleware = (app) => {
   // Enable CORS for frontend
-  app.use(cors({ origin: "https://campus-feed-nine.vercel.app/" }));
+  app.use(cors({ origin: "https://campus-feed-nine.vercel.app" }));
 
   // Parse JSON request bodies
   app.use(express.json());

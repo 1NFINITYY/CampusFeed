@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Items() {
   const [lostItems, setLostItems] = useState([]);
-  const backendURL = "https://campusfeed-backend.onrender.com/";
+  const backendURL = "https://campusfeed-backend.onrender.com";
 
   const fetchItems = async () => {
     try {
