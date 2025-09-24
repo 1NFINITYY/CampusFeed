@@ -147,7 +147,7 @@ export default function AddFeed() {
             <button
               type="button"
               onClick={() => document.getElementById("feedFileInput").click()}
-              className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:from-green-600 hover:to-green-800 transition"
+              className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:from-green-600 hover:to-teal-600 transition"
             >
               📂 {newFeed.file ? "Change File" : "Choose File"}
             </button>
