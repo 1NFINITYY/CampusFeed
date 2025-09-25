@@ -11,7 +11,7 @@ export default function Register() {
   const navigate = useNavigate();
 
   // ✅ Backend URL for local development
-  const backendURL = "https://campusfeed-backend.onrender.com";
+  const backendURL =  import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

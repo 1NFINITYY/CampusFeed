@@ -14,7 +14,7 @@ export default function AddFeed() {
   const [itemPreview, setItemPreview] = useState(null);
   const [itemLoading, setItemLoading] = useState(false);
 
-  const backendURL = "https://campusfeed-backend.onrender.com";
+  const backendURL = import.meta.env.VITE_API_URL;
 
   /*** FEED FUNCTIONS ***/
   const handleAddFeed = async () => {
