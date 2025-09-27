@@ -29,9 +29,14 @@ export default function Login() {
 
       if (res.ok && data.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("userId", data.userId); // ✅ store userId
+        localStorage.setItem("username", data.username || "");
+        localStorage.setItem("profilePic", data.profilePic || "");
         await new Promise((resolve) => setTimeout(resolve, 500));
         navigate("/");
-      } else {
+      }
+
+      else {
         toast.error(data.error || "Login failed");
       }
     } catch (err) {

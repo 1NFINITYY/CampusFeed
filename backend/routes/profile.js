@@ -25,7 +25,15 @@ router.get("/", auth, async (req, res) => {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const feeds = await Feed.find({ postedBy: req.user.id }).sort({ createdAt: -1 });
+    // Fetch feeds with comments populated
+    const feeds = await Feed.find({ postedBy: req.user.id })
+      .sort({ createdAt: -1 })
+      .populate("postedBy", "username") // optional: if you want postedBy username
+      .populate({
+        path: "comments.commentedBy",
+        select: "username", // only get the username
+      });
+
     const lostItems = await LostItem.find({ postedBy: req.user.id }).sort({ createdAt: -1 });
 
     res.json({ user, feeds, lostItems });
@@ -33,6 +41,7 @@ router.get("/", auth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Upload profile picture
 router.post("/picture", auth, upload.single("profilePic"), async (req, res) => {

@@ -34,6 +34,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Login
+// Login
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -50,19 +51,23 @@ router.post("/login", async (req, res) => {
         username: user.username,
         email: user.email,
         phone: user.phone,
-        profilePic: user.profilePic || "", // 🖼 include profile pic
+        profilePic: user.profilePic || "",
       },
       SECRET,
       { expiresIn: "1h" }
     );
 
+    // ✅ Send token and userId together
     res.json({
       token,
-      profilePic: user.profilePic || "", // also send separately
+      userId: user._id,
+      username: user.username,
+      profilePic: user.profilePic || "",
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 export default router;

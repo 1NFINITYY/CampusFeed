@@ -5,9 +5,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function AddFeed() {
-  const [newFeed, setNewFeed] = useState({ title: "", description: "", file: null });
-  const [feedPreview, setFeedPreview] = useState(null);
-  const [feedPreviewType, setFeedPreviewType] = useState(null);
+  const [newFeed, setNewFeed] = useState({ title: "", description: "", files: [] });
+  const [feedPreviews, setFeedPreviews] = useState([]); // Array of {url, type}
+  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const [feedLoading, setFeedLoading] = useState(false);
 
   const [newItem, setNewItem] = useState({ title: "", description: "", image: null });
@@ -19,7 +19,7 @@ export default function AddFeed() {
   /*** FEED FUNCTIONS ***/
   const handleAddFeed = async () => {
     if (!newFeed.title || !newFeed.description) return toast.warning("Please fill all fields for feed");
-    if (!newFeed.file) return toast.warning("Please choose a file for the feed");
+    if (newFeed.files.length === 0) return toast.warning("Please choose at least one file for the feed");
 
     const token = localStorage.getItem("token");
     if (!token) return toast.error("Please login first!");
@@ -29,7 +29,7 @@ export default function AddFeed() {
       const formData = new FormData();
       formData.append("title", newFeed.title);
       formData.append("description", newFeed.description);
-      formData.append("file", newFeed.file);
+      newFeed.files.forEach((file) => formData.append("files", file));
 
       await axios.post(`${backendURL}/api/feeds`, formData, {
         headers: {
@@ -38,9 +38,9 @@ export default function AddFeed() {
         },
       });
 
-      setNewFeed({ title: "", description: "", file: null });
-      setFeedPreview(null);
-      setFeedPreviewType(null);
+      setNewFeed({ title: "", description: "", files: [] });
+      setFeedPreviews([]);
+      setCurrentPreviewIndex(0);
       toast.success("Feed posted successfully!");
     } catch {
       toast.error("Failed to post feed");
@@ -49,20 +49,30 @@ export default function AddFeed() {
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleFilesChange = (e) => {
+    const files = Array.from(e.target.files).slice(0, 10); // max 10 files
+    const previews = files.map((file) => {
+      let type = file.type.startsWith("image/")
+        ? "image"
+        : file.type.startsWith("video/")
+        ? "video"
+        : file.type === "application/pdf"
+        ? "pdf"
+        : null;
+      return { url: URL.createObjectURL(file), type };
+    });
 
-    let type = file.type;
-    let previewUrl = URL.createObjectURL(file);
+    setNewFeed((prev) => ({ ...prev, files }));
+    setFeedPreviews(previews);
+    setCurrentPreviewIndex(0);
+  };
 
-    if (type.startsWith("image/")) setFeedPreviewType("image");
-    else if (type.startsWith("video/")) setFeedPreviewType("video");
-    else if (type === "application/pdf") setFeedPreviewType("pdf");
-    else setFeedPreviewType(null);
+  const handlePrevPreview = () => {
+    setCurrentPreviewIndex((prev) => (prev === 0 ? feedPreviews.length - 1 : prev - 1));
+  };
 
-    setNewFeed((prev) => ({ ...prev, file }));
-    setFeedPreview(previewUrl);
+  const handleNextPreview = () => {
+    setCurrentPreviewIndex((prev) => (prev === feedPreviews.length - 1 ? 0 : prev + 1));
   };
 
   /*** LOST ITEM FUNCTIONS ***/
@@ -111,9 +121,7 @@ export default function AddFeed() {
 
       {/* AI Section */}
       <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-xl border mb-12">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">
-          ✨ AI Post Generator
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">✨ AI Post Generator</h2>
         <AIInput onCreated={() => toast.info("📝 Post created via AI!")} />
       </div>
 
@@ -140,8 +148,9 @@ export default function AddFeed() {
             <input
               type="file"
               accept="image/*,video/*,.pdf"
-              onChange={handleFileChange}
+              onChange={handleFilesChange}
               id="feedFileInput"
+              multiple
               className="hidden"
             />
             <button
@@ -149,17 +158,43 @@ export default function AddFeed() {
               onClick={() => document.getElementById("feedFileInput").click()}
               className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:from-green-600 hover:to-teal-600 transition"
             >
-              📂 {newFeed.file ? "Change File" : "Choose File"}
+              📂 {newFeed.files.length ? `Change Files (${newFeed.files.length})` : "Choose Files (max 10)"}
             </button>
 
-            {feedPreview && feedPreviewType === "image" && (
-              <img src={feedPreview} alt="Preview" className="w-48 h-48 object-cover rounded-xl shadow-md" />
-            )}
-            {feedPreview && feedPreviewType === "video" && (
-              <video src={feedPreview} controls className="w-64 h-48 rounded-xl shadow-md" />
-            )}
-            {feedPreview && feedPreviewType === "pdf" && (
-              <p className="text-green-600 underline">📄 PDF ready to upload</p>
+            {feedPreviews.length > 0 && (
+              <div className="relative flex items-center justify-center mt-3">
+                <button
+                  onClick={handlePrevPreview}
+                  className="absolute left-0 bg-white/70 rounded-full p-2 hover:bg-white"
+                >
+                  ◀
+                </button>
+
+                {feedPreviews[currentPreviewIndex].type === "image" && (
+                  <img
+                    src={feedPreviews[currentPreviewIndex].url}
+                    alt="Preview"
+                    className="w-48 h-48 object-cover rounded-xl shadow-md"
+                  />
+                )}
+                {feedPreviews[currentPreviewIndex].type === "video" && (
+                  <video
+                    src={feedPreviews[currentPreviewIndex].url}
+                    controls
+                    className="w-64 h-48 rounded-xl shadow-md"
+                  />
+                )}
+                {feedPreviews[currentPreviewIndex].type === "pdf" && (
+                  <p className="text-green-600 underline">📄 PDF ready to upload</p>
+                )}
+
+                <button
+                  onClick={handleNextPreview}
+                  className="absolute right-0 bg-white/70 rounded-full p-2 hover:bg-white"
+                >
+                  ▶
+                </button>
+              </div>
             )}
           </div>
 
@@ -175,7 +210,7 @@ export default function AddFeed() {
         </div>
       </div>
 
-      {/* Add Lost Item Form */}
+      {/* Lost Item Form remains unchanged */}
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6">🏷️ Report a Lost Item</h2>
         <div className="flex flex-col gap-4">
