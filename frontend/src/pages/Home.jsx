@@ -64,12 +64,37 @@ export default function Home() {
     }));
   };
 
+  // Optimistic Like Handler
   const handleLike = async (postId, liked) => {
     if (!token) return toast.error("Please login to like posts!");
+
     try {
       const url = `${backendURL}/api/feeds/${postId}/${liked ? "unlike" : "like"}`;
       await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
-      fetchPosts();
+
+      // Update posts state
+      setPosts((prev) =>
+        prev.map((post) =>
+          post._id === postId
+            ? {
+                ...post,
+                likes: liked
+                  ? post.likes.filter((id) => id !== localStorage.getItem("userId")?.replace(/"/g, ""))
+                  : [...post.likes, localStorage.getItem("userId")?.replace(/"/g, "")],
+              }
+            : post
+        )
+      );
+
+      // Update modal if open
+      if (selectedPost?._id === postId) {
+        setSelectedPost((prev) => ({
+          ...prev,
+          likes: liked
+            ? prev.likes.filter((id) => id !== localStorage.getItem("userId")?.replace(/"/g, ""))
+            : [...prev.likes, localStorage.getItem("userId")?.replace(/"/g, "")],
+        }));
+      }
     } catch {
       toast.error("Failed to update like");
     }
@@ -92,7 +117,7 @@ export default function Home() {
       const { data } = await axios.get(`${backendURL}/api/feeds`);
       setPosts(data);
 
-      // Update selectedPost with latest comments
+      // Update modal comments
       const updatedPost = data.find((p) => p._id === selectedPost._id);
       if (updatedPost) setSelectedPost(updatedPost);
     } catch {
@@ -100,10 +125,10 @@ export default function Home() {
     }
   };
 
-  // Helper function to format time
+  // Time helper
   const timeAgo = (date) => {
     const now = new Date();
-    const diff = Math.floor((now - new Date(date)) / 1000); // difference in seconds
+    const diff = Math.floor((now - new Date(date)) / 1000);
 
     if (diff < 60) return `${diff} seconds ago`;
     if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
@@ -144,7 +169,7 @@ export default function Home() {
                           e.stopPropagation();
                           handleDownload(currentFile.url, post.title);
                         }}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition"
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition transform hover:scale-105"
                       >
                         ⬇️ Download PDF
                       </button>
@@ -192,7 +217,9 @@ export default function Home() {
                         e.stopPropagation();
                         handleLike(post._id, liked);
                       }}
-                      className={`px-3 py-1 rounded-full font-semibold text-sm ${liked ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"}`}
+                      className={`px-3 py-1 rounded-full font-semibold text-sm transition ${
+                        liked ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      }`}
                     >
                       {liked ? "❤️ Liked" : "🤍 Like"} ({post.likes?.length || 0})
                     </button>
@@ -216,14 +243,11 @@ export default function Home() {
               {/* Files Carousel */}
               <div className="relative w-full flex justify-center items-center h-[300px] mb-4 bg-gray-50 rounded-xl">
                 {selectedPost.files?.map((file, idx) => (
-                  <div
-                    key={idx}
-                    className={`${idx === currentIndexes[selectedPost._id] ? "block" : "hidden"} w-full h-full flex justify-center items-center`}
-                  >
+                  <div key={idx} className={`${idx === currentIndexes[selectedPost._id] ? "block" : "hidden"} w-full h-full flex justify-center items-center`}>
                     {file.type === "image" && <img src={file.url} alt={selectedPost.title} className="max-h-full max-w-full object-contain rounded-xl" />}
                     {file.type === "video" && <video src={file.url} controls className="max-h-full max-w-full object-contain rounded-xl" />}
                     {file.type === "raw" && (
-                      <button onClick={() => handleDownload(file.url, selectedPost.title)} className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition">
+                      <button onClick={() => handleDownload(file.url, selectedPost.title)} className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition transform hover:scale-105">
                         ⬇️ Download PDF
                       </button>
                     )}
@@ -256,14 +280,29 @@ export default function Home() {
 
               <p className="text-gray-700 whitespace-pre-wrap mb-3 text-center">{selectedPost.description}</p>
 
-              {/* Likes */}
+              {/* Modal Like */}
               <button
-                onClick={() => handleLike(selectedPost._id, selectedPost.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, "")))}
-                className={`px-4 py-2 rounded-full font-semibold text-sm mb-3 ${
-                  selectedPost.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, "")) ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"
+                onClick={() =>
+                  handleLike(
+                    selectedPost._id,
+                    selectedPost.likes?.some(
+                      (id) => id === localStorage.getItem("userId")?.replace(/"/g, "")
+                    )
+                  )
+                }
+                className={`px-4 py-2 rounded-full font-semibold text-sm mb-3 transition ${
+                  selectedPost.likes?.some(
+                    (id) => id === localStorage.getItem("userId")?.replace(/"/g, "")
+                  )
+                    ? "bg-red-500 text-white hover:bg-red-600"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
-                {selectedPost.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, "")) ? "❤️ Liked" : "🤍 Like"} ({selectedPost.likes?.length || 0})
+                {selectedPost.likes?.some(
+                  (id) => id === localStorage.getItem("userId")?.replace(/"/g, "")
+                )
+                  ? `❤️ Liked (${selectedPost.likes?.length || 0})`
+                  : `🤍 Like (${selectedPost.likes?.length || 0})`}
               </button>
 
               {/* Comments */}
@@ -290,7 +329,7 @@ export default function Home() {
                       placeholder="Add a comment..."
                       className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
                     />
-                    <button onClick={handleAddComment} className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition">
+                    <button onClick={handleAddComment} className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition transform hover:scale-105">
                       Post
                     </button>
                   </div>

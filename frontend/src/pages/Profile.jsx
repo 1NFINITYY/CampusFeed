@@ -35,8 +35,7 @@ export default function Profile() {
 
   const handleProfilePicChange = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-    if (!token) return toast.error("Please login first!");
+    if (!file || !token) return;
     setUploading(true);
     try {
       const formData = new FormData();
@@ -109,28 +108,62 @@ export default function Profile() {
 
   const handleLike = async (feedId, liked) => {
     if (!token) return toast.error("Please login to like feeds!");
+
     try {
       const url = `${backendURL}/api/feeds/${feedId}/${liked ? "unlike" : "like"}`;
       await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
-      fetchProfile();
+
+      setProfile((prev) => ({
+        ...prev,
+        feeds: prev.feeds.map((feed) =>
+          feed._id === feedId
+            ? {
+                ...feed,
+                likes: liked
+                  ? feed.likes.filter((id) => id !== localStorage.getItem("userId")?.replace(/"/g, ""))
+                  : [...feed.likes, localStorage.getItem("userId")?.replace(/"/g, "")]
+              }
+            : feed
+        )
+      }));
+
+      if (selectedFeed?._id === feedId) {
+        setSelectedFeed((prev) => ({
+          ...prev,
+          likes: liked
+            ? prev.likes.filter((id) => id !== localStorage.getItem("userId")?.replace(/"/g, ""))
+            : [...prev.likes, localStorage.getItem("userId")?.replace(/"/g, "")]
+        }));
+      }
     } catch {
       toast.error("Failed to update like");
     }
   };
 
   const handleAddComment = async () => {
-    if (!token) return toast.error("Please login to comment!");
-    if (!commentText.trim()) return;
+    if (!token || !commentText.trim()) return;
+
     try {
+      const newComment = { text: commentText, commentedBy: { username: profile.user.username }, createdAt: new Date() };
       await axios.post(
         `${backendURL}/api/feeds/${selectedFeed._id}/comment`,
         { text: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       setCommentText("");
-      fetchProfile();
-      const updatedFeed = profile.feeds.find((f) => f._id === selectedFeed._id);
-      if (updatedFeed) setSelectedFeed(updatedFeed);
+
+      setProfile((prev) => ({
+        ...prev,
+        feeds: prev.feeds.map((feed) =>
+          feed._id === selectedFeed._id ? { ...feed, comments: [...feed.comments, newComment] } : feed
+        )
+      }));
+
+      setSelectedFeed((prev) => ({
+        ...prev,
+        comments: [...prev.comments, newComment]
+      }));
     } catch {
       toast.error("Failed to add comment");
     }
@@ -175,17 +208,13 @@ export default function Profile() {
       <div className="max-w-3xl mx-auto flex justify-center gap-4 mb-8">
         <button
           onClick={() => setActiveTab("feeds")}
-          className={`px-6 py-2 rounded-xl font-semibold transition ${
-            activeTab === "feeds" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg" : "bg-white border border-purple-300 text-gray-700 hover:shadow-md"
-          }`}
+          className={`px-6 py-2 rounded-xl font-semibold transition ${activeTab === "feeds" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg" : "bg-white border border-purple-300 text-gray-700 hover:shadow-md"}`}
         >
           My Feeds
         </button>
         <button
           onClick={() => setActiveTab("lostItems")}
-          className={`px-6 py-2 rounded-xl font-semibold transition ${
-            activeTab === "lostItems" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg" : "bg-white border border-purple-300 text-gray-700 hover:shadow-md"
-          }`}
+          className={`px-6 py-2 rounded-xl font-semibold transition ${activeTab === "lostItems" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg" : "bg-white border border-purple-300 text-gray-700 hover:shadow-md"}`}
         >
           My Lost Items
         </button>
@@ -207,13 +236,17 @@ export default function Profile() {
                   <div
                     key={feed._id}
                     onClick={() => setSelectedFeed(feed)}
-                    className="bg-white p-5 rounded-2xl shadow-lg border border-purple-100 flex flex-col transition-transform hover:scale-105 hover:shadow-2xl cursor-pointer w-full h-[400px]"
+                    className="bg-white p-5 rounded-2xl shadow-lg border border-purple-100 flex flex-col transition-transform hover:scale-105 hover:shadow-2xl cursor-pointer w-full h-[400px] overflow-hidden"
                   >
                     {/* Carousel */}
                     {currentFile && (
                       <div className="relative flex justify-center items-center bg-gray-50 w-full h-[220px] mb-3">
-                        {currentFile.type === "image" && <img src={currentFile.url} alt={feed.title} className="max-h-full max-w-full object-contain rounded-xl" />}
-                        {currentFile.type === "video" && <video src={currentFile.url} controls className="max-h-full max-w-full object-contain rounded-xl" />}
+                        {currentFile.type === "image" && (
+                          <img src={currentFile.url} alt={feed.title} className="max-h-full max-w-full object-contain rounded-xl" />
+                        )}
+                        {currentFile.type === "video" && (
+                          <video src={currentFile.url} controls className="max-h-full max-w-full object-contain rounded-xl" />
+                        )}
                         {currentFile.type === "raw" && (
                           <button
                             onClick={(e) => {
@@ -251,7 +284,7 @@ export default function Profile() {
                     )}
 
                     <h4 className="font-bold text-gray-800 mb-1">{feed.title}</h4>
-                    <p className="text-gray-600 flex-grow">{feed.description}</p>
+                    <p className="text-gray-600 flex-grow overflow-hidden text-ellipsis">{feed.description}</p>
 
                     <div className="mt-2 flex items-center justify-between">
                       <button
@@ -259,7 +292,7 @@ export default function Profile() {
                           e.stopPropagation();
                           handleLike(feed._id, liked);
                         }}
-                        className={`px-3 py-1 rounded-full font-semibold text-sm ${liked ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"}`}
+                        className={`px-3 py-1 rounded-full font-semibold text-sm transition ${liked ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
                       >
                         {liked ? `❤️ Liked (${feed.likes?.length || 0})` : `🤍 Like (${feed.likes?.length || 0})`}
                       </button>
@@ -293,7 +326,7 @@ export default function Profile() {
               <h2 className="text-2xl font-bold mb-3 text-center">{selectedFeed.title}</h2>
 
               {/* Modal Carousel */}
-              <div className="relative w-full flex justify-center items-center h-[300px] mb-4 bg-gray-50 rounded-xl">
+              <div className="relative w-full flex justify-center items-center h-[300px] mb-4 bg-gray-50 rounded-xl overflow-hidden">
                 {selectedFeed.files?.map((file, idx) => (
                   <div key={idx} className={`${idx === currentIndexes[selectedFeed._id] ? "block" : "hidden"} w-full h-full flex justify-center items-center`}>
                     {file.type === "image" && <img src={file.url} alt={selectedFeed.title} className="max-h-full max-w-full object-contain rounded-xl" />}
@@ -316,10 +349,9 @@ export default function Profile() {
 
               <p className="text-gray-700 whitespace-pre-wrap mb-3 text-center">{selectedFeed.description}</p>
 
-              {/* Likes */}
               <button
                 onClick={() => handleLike(selectedFeed._id, selectedFeed.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, "")))}
-                className={`px-4 py-2 rounded-full font-semibold text-sm mb-3 ${selectedFeed.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, "")) ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"}`}
+                className={`px-4 py-2 rounded-full font-semibold text-sm mb-3 transition ${selectedFeed.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, "")) ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
               >
                 {selectedFeed.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, "")) ? `❤️ Liked (${selectedFeed.likes?.length || 0})` : `🤍 Like (${selectedFeed.likes?.length || 0})`}
               </button>
@@ -371,12 +403,18 @@ export default function Profile() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {lostItems.map((item) => (
-                <div key={item._id} className="bg-white p-5 rounded-2xl shadow-lg border border-purple-100 flex flex-col w-full h-[400px]">
-                  {item.imageUrl && <div className="flex justify-center items-center h-[220px] mb-3"><img src={item.imageUrl} alt={item.title} className="max-h-full max-w-full object-contain rounded-xl" /></div>}
+                <div key={item._id} className="bg-white p-5 rounded-2xl shadow-lg border border-purple-100 flex flex-col w-full h-[400px] overflow-hidden">
+                  {item.imageUrl && (
+                    <div className="flex justify-center items-center h-[220px] mb-3">
+                      <img src={item.imageUrl} alt={item.title} className="max-h-full max-w-full object-contain rounded-xl" />
+                    </div>
+                  )}
                   <h4 className="font-bold text-gray-800 mb-1">{item.title}</h4>
-                  <p className="text-gray-600 flex-grow">{item.description}</p>
+                  <p className="text-gray-600 flex-grow overflow-hidden text-ellipsis">{item.description}</p>
                   <span className={`font-semibold mb-2 ${item.status === "lost" ? "text-red-500" : "text-green-500"}`}>Status: {item.status}</span>
-                  <button onClick={() => handleDeleteLostItem(item._id)} className="bg-gradient-to-r from-red-500 to-red-700 text-white py-2 rounded-xl shadow-md hover:from-red-600 hover:to-red-800 transition transform hover:scale-105">Delete</button>
+                  <button onClick={() => handleDeleteLostItem(item._id)} className="bg-gradient-to-r from-red-500 to-red-700 text-white py-2 rounded-xl shadow-md hover:from-red-600 hover:to-red-800 transition transform hover:scale-105">
+                    Delete
+                  </button>
                 </div>
               ))}
             </div>
