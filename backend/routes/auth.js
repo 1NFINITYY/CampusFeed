@@ -54,7 +54,7 @@ router.post("/login", async (req, res) => {
         profilePic: user.profilePic || "",
       },
       SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "7d" }
     );
 
     // ✅ Send token and userId together
