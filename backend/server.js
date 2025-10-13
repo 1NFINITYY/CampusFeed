@@ -9,6 +9,8 @@ import lostItemsRoutes from "./routes/lostItems.js";
 import feedsRoutes from "./routes/Feeds.js";
 import authRoutes from "./routes/auth.js";
 import profileRoutes from "./routes/profile.js";
+import aiRoutes from "./routes/aiinput.js";
+
 
 dotenv.config();
 
@@ -25,6 +27,7 @@ app.use("/api/lostitems", lostItemsRoutes);
 app.use("/api/feeds", feedsRoutes);
 app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
+app.use("/api/ai", aiRoutes);
 
 
 // Optional: serve static frontend (if you build React later)

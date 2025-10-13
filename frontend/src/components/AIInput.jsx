@@ -1,76 +1,174 @@
 import { useState } from "react";
-import axios from "axios";
+import axios from "../context/axiosInstance";
+import { toast } from "react-toastify";
 
 export default function AIInput({ onCreated }) {
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [metadata, setMetadata] = useState(null);
+  const [files, setFiles] = useState([]);
+
+  const handleFilesChange = (e) => {
+    const selectedFiles = Array.from(e.target.files).slice(0, 10);
+    setFiles(selectedFiles);
+  };
 
   const handleGenerate = async () => {
-    const user = JSON.parse(localStorage.getItem('userInfo') || 'null');
-    if (!user) return alert('Please login to use AI metadata feature');
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to use AI feature");
+      return;
+    }
+    if (!text.trim()) {
+      toast.warning("Enter some text first");
+      return;
+    }
     setLoading(true);
     try {
-      const { data } = await axios.post('/api/ai/metadata', { text }, {
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
+      const { data } = await axios.post(
+        "/api/ai/metadata",
+        { text },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setMetadata(data.metadata);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to generate metadata');
+      toast.success("AI metadata generated!");
+    } catch {
+      toast.error("Failed to generate metadata");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateJob = async () => {
-    const user = JSON.parse(localStorage.getItem('userInfo') || 'null');
-    if (!user) return alert('Please login to create job');
-    if (!metadata) return alert('No metadata to create job from');
+  const handleCreatePost = async () => {
+    if (!metadata) {
+      toast.warning("No AI metadata generated");
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login");
+      return;
+    }
     setLoading(true);
     try {
-      await axios.post('/api/jobs', {
-        title: metadata.title || 'Untitled',
-        description: metadata.short_description || text,
-        company: metadata.company || 'Company',
-        tags: metadata.tags || [],
-        salary_range: metadata.salary_range || '',
-        location: metadata.location || 'Remote',
-        skills: metadata.skills || []
-      }, {
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
-      alert('Job created from AI metadata');
+      const formData = new FormData();
+      formData.append("title", metadata.title || "Untitled");
+      formData.append("description", metadata.description || text);
+
+      if (metadata.type === "feed") {
+        if (files.length > 0) files.forEach((file) => formData.append("files", file));
+        await axios.post("/api/feeds", formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("Feed post created 🚀");
+      } else if (metadata.type === "lostitem") {
+        if (files.length === 0) {
+          toast.warning("Please attach 1 image for lost item");
+          setLoading(false);
+          return;
+        }
+        formData.append("image", files[0]);
+        await axios.post("/api/lostitems", formData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("Lost item post created 🏷️");
+      }
+
       setMetadata(null);
-      setText('');
+      setText("");
+      setFiles([]);
       if (onCreated) onCreated();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to create job');
+    } catch {
+      toast.error("Failed to create post");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ border: '1px solid #ddd', padding: 16, borderRadius: 8, marginBottom: 16 }}>
-      <h3>Paste job description / text</h3>
-      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} style={{ width: '100%' }} />
-      <div style={{ marginTop: 8 }}>
-        <button onClick={handleGenerate} disabled={loading || !text}>
-          {loading ? 'Generating...' : 'Generate Metadata'}
+    <div className="border p-4 rounded-xl mb-6 relative">
+      <div className="flex justify-between items-center mb-2 relative">
+        <h3 className="font-semibold">🧠 AI Post Generator</h3>
+        <div className="relative group">
+          <span className="text-gray-500 hover:text-gray-700 cursor-pointer">👁️</span>
+          <div className="absolute right-0 top-full mt-1 w-60 p-2 bg-gray-100 text-gray-700 text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+            <p><strong>Lost items:</strong> Attach exactly 1 image.</p>
+            <p><strong>Feed posts:</strong> Attach up to 10 files (image, video, or PDF).</p>
+          </div>
+        </div>
+      </div>
+
+      <textarea
+        rows={4}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Enter description for AI"
+        className="w-full p-2 border rounded-lg mb-2"
+      />
+
+      <label className="block mb-2">
+        <span className="sr-only">Choose Photos</span>
+        <button
+          type="button"
+          className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
+          onClick={() => document.getElementById("fileInput").click()}
+        >
+          Choose Photos
         </button>
+        <input
+          id="fileInput"
+          type="file"
+          multiple
+          onChange={handleFilesChange}
+          className="hidden"
+          accept="image/*,video/*,application/pdf"
+        />
+      </label>
+
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2">
+          {files.map((file, idx) => (
+            <div key={idx} className="w-20 h-20 border rounded overflow-hidden relative">
+              {file.type.startsWith("image/") ? (
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt={file.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center w-full h-full bg-gray-100 text-xs text-gray-700 p-1 text-center">
+                  {file.name}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-2">
+        <button
+          onClick={handleGenerate}
+          disabled={loading || !text}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+        >
+          {loading ? "Generating..." : "Generate Metadata"}
+        </button>
+
         {metadata && (
-          <button onClick={handleCreateJob} style={{ marginLeft: 8 }} disabled={loading}>
-            {loading ? 'Creating...' : 'Create Job from Metadata'}
+          <button
+            onClick={handleCreatePost}
+            disabled={loading}
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
+          >
+            {loading ? "Creating..." : `Create ${metadata.type === "feed" ? "Feed" : "Lost Item"}`}
           </button>
         )}
       </div>
 
       {metadata && (
-        <div style={{ marginTop: 12, background: '#fafafa', padding: 8, borderRadius: 6 }}>
-          <strong>Metadata preview:</strong>
-          <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(metadata, null, 2)}</pre>
+        <div className="mt-2 p-2 bg-gray-50 rounded-lg text-sm">
+          <strong>AI Metadata:</strong>
+          <pre>{JSON.stringify(metadata, null, 2)}</pre>
         </div>
       )}
     </div>
