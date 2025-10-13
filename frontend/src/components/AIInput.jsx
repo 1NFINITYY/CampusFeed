@@ -10,32 +10,43 @@ export default function AIInput({ onCreated }) {
 
   const handleFilesChange = (e) => {
     const selectedFiles = Array.from(e.target.files).slice(0, 10);
+    console.log("📸 Selected Files:", selectedFiles);
     setFiles(selectedFiles);
   };
 
   const handleGenerate = async () => {
     const token = localStorage.getItem("token");
+    console.log("🔑 Token found:", token ? "✅ Yes" : "❌ No");
+
     if (!token) {
       toast.error("Please login to use AI feature");
       return;
     }
+
     if (!text.trim()) {
       toast.warning("Enter some text first");
       return;
     }
+
     setLoading(true);
+    console.log("🧠 Sending request to /api/ai/metadata with text:", text);
+
     try {
       const { data } = await axios.post(
         "/api/ai/metadata",
         { text },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      console.log("✅ Metadata Response:", data);
       setMetadata(data.metadata);
       toast.success("AI metadata generated!");
-    } catch {
+    } catch (error) {
+      console.error("❌ Metadata Generation Error:", error.response?.data || error.message);
       toast.error("Failed to generate metadata");
     } finally {
       setLoading(false);
+      console.log("🧩 Metadata generation process finished");
     }
   };
 
@@ -44,22 +55,33 @@ export default function AIInput({ onCreated }) {
       toast.warning("No AI metadata generated");
       return;
     }
+
     const token = localStorage.getItem("token");
+    console.log("🔑 Token (createPost):", token ? "✅ Yes" : "❌ No");
+
     if (!token) {
       toast.error("Please login");
       return;
     }
+
     setLoading(true);
+    console.log("📝 Creating post with metadata:", metadata);
+    console.log("📂 Attached files:", files);
+
     try {
       const formData = new FormData();
       formData.append("title", metadata.title || "Untitled");
       formData.append("description", metadata.description || text);
 
       if (metadata.type === "feed") {
-        if (files.length > 0) files.forEach((file) => formData.append("files", file));
-        await axios.post("/api/feeds", formData, {
+        if (files.length > 0) {
+          files.forEach((file) => formData.append("files", file));
+          console.log(`🖼️ Appended ${files.length} file(s) to feed post`);
+        }
+        const res = await axios.post("/api/feeds", formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("✅ Feed creation response:", res.data);
         toast.success("Feed post created 🚀");
       } else if (metadata.type === "lostitem") {
         if (files.length === 0) {
@@ -68,9 +90,11 @@ export default function AIInput({ onCreated }) {
           return;
         }
         formData.append("image", files[0]);
-        await axios.post("/api/lostitems", formData, {
+        console.log("📸 Appended 1 image for lost item");
+        const res = await axios.post("/api/lostitems", formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("✅ Lost item creation response:", res.data);
         toast.success("Lost item post created 🏷️");
       }
 
@@ -78,10 +102,12 @@ export default function AIInput({ onCreated }) {
       setText("");
       setFiles([]);
       if (onCreated) onCreated();
-    } catch {
+    } catch (error) {
+      console.error("❌ Post creation failed:", error.response?.data || error.message);
       toast.error("Failed to create post");
     } finally {
       setLoading(false);
+      console.log("🧩 Post creation process finished");
     }
   };
 
