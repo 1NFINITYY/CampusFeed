@@ -76,8 +76,14 @@ export default function Home() {
             ? {
                 ...post,
                 likes: liked
-                  ? post.likes.filter((id) => id !== localStorage.getItem("userId")?.replace(/"/g, ""))
-                  : [...post.likes, localStorage.getItem("userId")?.replace(/"/g, "")],
+                  ? post.likes.filter(
+                      (id) =>
+                        id !== localStorage.getItem("userId")?.replace(/"/g, "")
+                    )
+                  : [
+                      ...post.likes,
+                      localStorage.getItem("userId")?.replace(/"/g, ""),
+                    ],
               }
             : post
         )
@@ -86,7 +92,10 @@ export default function Home() {
         setSelectedPost((prev) => ({
           ...prev,
           likes: liked
-            ? prev.likes.filter((id) => id !== localStorage.getItem("userId")?.replace(/"/g, ""))
+            ? prev.likes.filter(
+                (id) =>
+                  id !== localStorage.getItem("userId")?.replace(/"/g, "")
+              )
             : [...prev.likes, localStorage.getItem("userId")?.replace(/"/g, "")],
         }));
       }
@@ -128,110 +137,186 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue py-8 px-4 md:px-8">
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
 
-      <div className="max-w-4xl mx-auto text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-3">Campus Feed</h1>
-        <p className="text-gray-600 text-lg md:text-xl">Stay updated with the latest posts and opportunities!</p>
+      <div className="max-w-4xl mx-auto text-center mb-8">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-3">
+          Campus Feed
+        </h1>
+        <p className="text-gray-600 text-lg md:text-xl">
+          Stay updated with the latest posts and opportunities!
+        </p>
       </div>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {!loading &&
-          posts.map((post) => {
-            const currentIndex = currentIndexes[post._id] || 0;
-            const liked = token && post.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, ""));
+      {/* 🔄 Loading Posts Button (same style as Lost & Found) */}
+      {loading && (
+        <div className="flex justify-center mb-6">
+          <button
+            type="button"
+            disabled
+            className="flex items-center bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md cursor-not-allowed"
+          >
+            <svg
+              className="animate-spin h-5 w-5 mr-3 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+              ></path>
+            </svg>
+            Loading posts...
+          </button>
+        </div>
+      )}
 
-            return (
-              <div
-                key={post._id}
-                onClick={() => setSelectedPost(post)}
-                className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col transition-transform transform hover:-translate-y-1 hover:shadow-xl cursor-pointer w-full h-[400px]"
-              >
-                {/* Sliding Carousel */}
-                {post.files && post.files.length > 0 && (
-                  <div className="relative w-full h-[220px] overflow-hidden bg-gray-50">
-                    <div
-                      className="flex transition-transform duration-700 ease-in-out h-full"
-                      style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-                    >
-                      {post.files.map((file, idx) => (
-                        <div key={idx} className="w-full flex-shrink-0 flex justify-center items-center">
-                          {file.type === "image" && (
-                            <img src={file.url} alt={post.title} className="max-h-full max-w-full object-contain" />
-                          )}
-                          {file.type === "video" && (
-                            <video src={file.url} controls className="max-h-full max-w-full object-contain" />
-                          )}
-                          {file.type === "raw" && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownload(file.url, post.title);
-                              }}
-                              className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition transform hover:scale-105"
-                            >
-                              ⬇️ Download PDF
-                            </button>
-                          )}
-                        </div>
-                      ))}
+      {/* Posts Grid / Empty State */}
+      {!loading && posts.length === 0 ? (
+        <p className="text-center text-gray-600 text-lg">
+          No posts have been shared yet.
+        </p>
+      ) : (
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {!loading &&
+            posts.map((post) => {
+              const currentIndex = currentIndexes[post._id] || 0;
+              const liked =
+                token &&
+                post.likes?.some(
+                  (id) =>
+                    id ===
+                    localStorage.getItem("userId")?.replace(/"/g, "")
+                );
+
+              return (
+                <div
+                  key={post._id}
+                  onClick={() => setSelectedPost(post)}
+                  className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col transition-transform transform hover:-translate-y-1 hover:shadow-xl cursor-pointer w-full h-[400px]"
+                >
+                  {/* Sliding Carousel */}
+                  {post.files && post.files.length > 0 && (
+                    <div className="relative w-full h-[220px] overflow-hidden bg-gray-50">
+                      <div
+                        className="flex transition-transform duration-700 ease-in-out h-full"
+                        style={{
+                          transform: `translateX(-${currentIndex * 100}%)`,
+                        }}
+                      >
+                        {post.files.map((file, idx) => (
+                          <div
+                            key={idx}
+                            className="w-full flex-shrink-0 flex justify-center items-center"
+                          >
+                            {file.type === "image" && (
+                              <img
+                                src={file.url}
+                                alt={post.title}
+                                className="max-h-full max-w-full object-contain"
+                              />
+                            )}
+                            {file.type === "video" && (
+                              <video
+                                src={file.url}
+                                controls
+                                className="max-h-full max-w-full object-contain"
+                              />
+                            )}
+                            {file.type === "raw" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownload(file.url, post.title);
+                                }}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition transform hover:scale-105"
+                              >
+                                ⬇️ Download PDF
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {post.files.length > 1 && (
+                        <>
+                          <button
+                            className="absolute top-1/2 left-2 bg-white/50 rounded-full p-2 shadow hover:bg-white/70 transition"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePrev(post._id, post.files.length);
+                            }}
+                          >
+                            ◀
+                          </button>
+                          <button
+                            className="absolute top-1/2 right-2 bg-white/50 rounded-full p-2 shadow hover:bg-white/70 transition"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNext(post._id, post.files.length);
+                            }}
+                          >
+                            ▶
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Card Content */}
+                  <div className="p-5 flex flex-col flex-1 justify-between">
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
+                        {post.title}
+                      </h2>
+                      <p
+                        className="text-gray-700 text-sm overflow-hidden text-ellipsis whitespace-normal max-h-[4.5rem]"
+                        style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {post.description}
+                      </p>
                     </div>
 
-                    {post.files.length > 1 && (
-                      <>
-                        <button
-                          className="absolute top-1/2 left-2 bg-white/50 rounded-full p-2 shadow hover:bg-white/70 transition"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePrev(post._id, post.files.length);
-                          }}
-                        >
-                          ◀
-                        </button>
-                        <button
-                          className="absolute top-1/2 right-2 bg-white/50 rounded-full p-2 shadow hover:bg-white/70 transition"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleNext(post._id, post.files.length);
-                          }}
-                        >
-                          ▶
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Card Content */}
-                <div className="p-5 flex flex-col flex-1 justify-between">
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">{post.title}</h2>
-                    <p
-                      className="text-gray-700 text-sm overflow-hidden text-ellipsis whitespace-normal max-h-[4.5rem]"
-                      style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}
-                    >
-                      {post.description}
+                    <div className="mt-3 flex items-center justify-between">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLike(post._id, liked);
+                        }}
+                        className={`px-3 py-1 rounded-full font-semibold text-sm transition ${
+                          liked
+                            ? "bg-red-500 text-white hover:bg-red-600"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
+                      >
+                        {liked ? "❤️ Liked" : "🤍 Like"} (
+                        {post.likes?.length || 0})
+                      </button>
+                      <p className="text-gray-500 text-sm italic">
+                        ✍️ {post.postedBy?.username || "Anonymous"}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      🕒 {timeAgo(post.createdAt)}
                     </p>
                   </div>
-
-                  <div className="mt-3 flex items-center justify-between">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLike(post._id, liked);
-                      }}
-                      className={`px-3 py-1 rounded-full font-semibold text-sm transition ${
-                        liked ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
-                    >
-                      {liked ? "❤️ Liked" : "🤍 Like"} ({post.likes?.length || 0})
-                    </button>
-                    <p className="text-gray-500 text-sm italic">✍️ {post.postedBy?.username || "Anonymous"}</p>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">🕒 {timeAgo(post.createdAt)}</p>
                 </div>
-              </div>
-            );
-          })}
-      </div>
+              );
+            })}
+        </div>
+      )}
 
       {/* Modal */}
       {selectedPost && (
@@ -243,32 +328,52 @@ export default function Home() {
             className="bg-white rounded-2xl shadow-lg w-full max-w-4xl mx-4 relative animate-scaleIn max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={() => setSelectedPost(null)} className="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-2xl">
+            <button
+              onClick={() => setSelectedPost(null)}
+              className="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-2xl"
+            >
               ✖
             </button>
 
             <div className="p-6 flex flex-col items-center">
-              <h2 className="text-2xl font-bold mb-3 text-center">{selectedPost.title}</h2>
+              <h2 className="text-2xl font-bold mb-3 text-center">
+                {selectedPost.title}
+              </h2>
 
               {/* Modal Carousel with Sliding */}
               <div className="relative w-full flex justify-center items-center h-[300px] mb-4 bg-gray-50 rounded-xl overflow-hidden">
                 <div
                   className="flex transition-transform duration-700 ease-in-out h-full w-full"
                   style={{
-                    transform: `translateX(-${(currentIndexes[selectedPost._id] || 0) * 100}%)`,
+                    transform: `translateX(-${
+                      (currentIndexes[selectedPost._id] || 0) * 100
+                    }%)`,
                   }}
                 >
                   {selectedPost.files?.map((file, idx) => (
-                    <div key={idx} className="w-full flex-shrink-0 flex justify-center items-center">
+                    <div
+                      key={idx}
+                      className="w-full flex-shrink-0 flex justify-center items-center"
+                    >
                       {file.type === "image" && (
-                        <img src={file.url} alt={selectedPost.title} className="max-h-full max-w-full object-contain rounded-xl" />
+                        <img
+                          src={file.url}
+                          alt={selectedPost.title}
+                          className="max-h-full max-w-full object-contain rounded-xl"
+                        />
                       )}
                       {file.type === "video" && (
-                        <video src={file.url} controls className="max-h-full max-w-full object-contain rounded-xl" />
+                        <video
+                          src={file.url}
+                          controls
+                          className="max-h-full max-w-full object-contain rounded-xl"
+                        />
                       )}
                       {file.type === "raw" && (
                         <button
-                          onClick={() => handleDownload(file.url, selectedPost.title)}
+                          onClick={() =>
+                            handleDownload(file.url, selectedPost.title)
+                          }
                           className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition transform hover:scale-105"
                         >
                           ⬇️ Download PDF
@@ -302,23 +407,36 @@ export default function Home() {
                 )}
               </div>
 
-              <p className="text-gray-700 whitespace-pre-wrap mb-3 text-center">{selectedPost.description}</p>
+              <p className="text-gray-700 whitespace-pre-wrap mb-3 text-center">
+                {selectedPost.description}
+              </p>
 
               {/* Like */}
               <button
                 onClick={() =>
                   handleLike(
                     selectedPost._id,
-                    selectedPost.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, ""))
+                    selectedPost.likes?.some(
+                      (id) =>
+                        id ===
+                        localStorage.getItem("userId")?.replace(/"/g, "")
+                    )
                   )
                 }
                 className={`px-4 py-2 rounded-full font-semibold text-sm mb-3 transition ${
-                  selectedPost.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, ""))
+                  selectedPost.likes?.some(
+                    (id) =>
+                      id ===
+                      localStorage.getItem("userId")?.replace(/"/g, "")
+                  )
                     ? "bg-red-500 text-white hover:bg-red-600"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
-                {selectedPost.likes?.some((id) => id === localStorage.getItem("userId")?.replace(/"/g, ""))
+                {selectedPost.likes?.some(
+                  (id) =>
+                    id === localStorage.getItem("userId")?.replace(/"/g, "")
+                )
                   ? `❤️ Liked (${selectedPost.likes?.length || 0})`
                   : `🤍 Like (${selectedPost.likes?.length || 0})`}
               </button>
@@ -327,16 +445,26 @@ export default function Home() {
               <div className="w-full max-w-xl">
                 <h3 className="font-semibold mb-2 text-gray-800">Comments</h3>
                 <div className="max-h-64 overflow-y-auto mb-3">
-                  {selectedPost.comments?.length === 0 && <p className="text-gray-500 text-sm">No comments yet.</p>}
+                  {selectedPost.comments?.length === 0 && (
+                    <p className="text-gray-500 text-sm">No comments yet.</p>
+                  )}
                   {selectedPost.comments
                     ?.slice()
                     .reverse()
                     .map((c, idx) => (
-                      <div key={idx} className="mb-2 border-b border-gray-200 pb-1">
+                      <div
+                        key={idx}
+                        className="mb-2 border-b border-gray-200 pb-1"
+                      >
                         <p className="text-gray-700 text-sm">
-                          <span className="font-semibold">{c.commentedBy?.username || "Anonymous"}:</span> {c.text}
+                          <span className="font-semibold">
+                            {c.commentedBy?.username || "Anonymous"}:
+                          </span>{" "}
+                          {c.text}
                         </p>
-                        <p className="text-gray-400 text-xs italic">{timeAgo(c.createdAt)}</p>
+                        <p className="text-gray-400 text-xs italic">
+                          {timeAgo(c.createdAt)}
+                        </p>
                       </div>
                     ))}
                 </div>
@@ -359,7 +487,11 @@ export default function Home() {
                   </div>
                 ) : (
                   <p className="text-gray-600 text-center">
-                    Please <Link to="/login" className="text-purple-500 underline">login</Link> to comment
+                    Please{" "}
+                    <Link to="/login" className="text-purple-500 underline">
+                      login
+                    </Link>{" "}
+                    to comment
                   </p>
                 )}
               </div>
@@ -367,7 +499,9 @@ export default function Home() {
               <p className="text-sm text-gray-500 italic mt-3">
                 ✍️ Posted by: {selectedPost.postedBy?.username || "Anonymous"}
               </p>
-              <p className="text-xs text-gray-400 mt-1">🕒 {timeAgo(selectedPost.createdAt)}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                🕒 {timeAgo(selectedPost.createdAt)}
+              </p>
             </div>
           </div>
         </div>
