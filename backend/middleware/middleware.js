@@ -22,5 +22,7 @@ export const applyMiddleware = (app) => {
     })
   );
 
-  app.use(express.json());
+  // 10mb limit needed for base64 image payloads sent to Gemini Vision API
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 };
