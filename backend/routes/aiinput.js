@@ -24,17 +24,23 @@ router.post("/metadata", auth, async (req, res) => {
       return res.status(400).json({ error: "imageBase64 and mimeType are required" });
     }
 
-    const prompt = `You are an AI assistant for a campus social app. Analyze this image carefully and return ONLY a valid JSON object — no markdown, no explanation, just raw JSON.
+    const prompt = `You are helping students post content on a campus social app. Analyze this image and return ONLY a valid JSON object — no markdown, no explanation, just raw JSON.
 
 Return this exact structure:
 {
-  "title": "short, specific title based on what you see in the image",
-  "description": "a clear 1-2 sentence description of the image contents",
+  "title": "short, catchy title for the campus post (do NOT say 'screenshot', 'image', or 'photo')",
+  "description": "1-2 sentence description written as a campus post caption — describe what is happening or what the item/content is about, NOT that it is an image or screenshot",
   "type": "feed" or "lostitem"
 }
 
+Rules for "description":
+- Write as if YOU are the student posting this. Describe the subject directly.
+- NEVER start with "A screenshot of", "An image of", "A photo of", or similar meta-phrases.
+- Example good: "Sample test cases for a competitive programming problem involving ball arrangements."
+- Example bad: "A screenshot displaying sample inputs and outputs for a competitive programming problem."
+
 Classification rules for "type":
-- "lostitem" → if the image shows a personal item someone might lose or find (e.g. water bottle, phone, wallet, keys, bag, ID card, earphones, charger, umbrella, spectacles, hoodie, clothing)
+- "lostitem" → personal item someone might lose or find (e.g. water bottle, phone, wallet, keys, bag, ID card, earphones, charger, umbrella, spectacles, hoodie, clothing)
 - "feed" → everything else (campus events, notices, food, selfies, memes, announcements, etc.)
 
 IMPORTANT: Return ONLY the JSON object. No \`\`\`json or \`\`\` wrappers. No extra text.`;
