@@ -17,8 +17,15 @@ export default function AIInput({ onCreated }) {
   const [files, setFiles] = useState([]);
 
   const handleFilesChange = (e) => {
-    const selectedFiles = Array.from(e.target.files).slice(0, 10);
-    setFiles(selectedFiles);
+    const incoming = Array.from(e.target.files);
+    const merged = [...files, ...incoming].slice(0, 10);
+    setFiles(merged);
+    setMetadata(null);
+    e.target.value = "";
+  };
+
+  const handleRemoveFile = (idx) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
     setMetadata(null);
   };
 
@@ -144,18 +151,28 @@ export default function AIInput({ onCreated }) {
       {files.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
           {files.map((file, idx) => (
-            <div key={idx} className="w-20 h-20 border rounded overflow-hidden">
+            <div key={idx} className="relative w-20 h-20 border rounded-xl overflow-hidden shadow-sm group">
               {file.type.startsWith("image/") ? (
                 <img
                   src={URL.createObjectURL(file)}
                   alt={file.name}
                   className="w-full h-full object-cover"
                 />
+              ) : file.type.startsWith("video/") ? (
+                <video src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
               ) : (
-                <div className="flex items-center justify-center w-full h-full bg-gray-100 text-xs text-gray-700 p-1 text-center">
-                  {file.name}
+                <div className="flex items-center justify-center w-full h-full bg-gray-100 text-xs text-gray-700 p-1 text-center leading-tight">
+                  📄 {file.name.length > 12 ? file.name.slice(0, 12) + "…" : file.name}
                 </div>
               )}
+              <button
+                type="button"
+                onClick={() => handleRemoveFile(idx)}
+                className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                title="Remove"
+              >
+                ✕
+              </button>
             </div>
           ))}
         </div>

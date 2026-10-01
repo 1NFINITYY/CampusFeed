@@ -6,8 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function AddFeed() {
   const [newFeed, setNewFeed] = useState({ title: "", description: "", files: [] });
-  const [feedPreviews, setFeedPreviews] = useState([]); // Array of {url, type}
-  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
+  const [feedPreviews, setFeedPreviews] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
 
   const [newItem, setNewItem] = useState({ title: "", description: "", image: null });
@@ -32,15 +31,11 @@ export default function AddFeed() {
       newFeed.files.forEach((file) => formData.append("files", file));
 
       await axios.post(`${backendURL}/api/feeds`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
       });
 
       setNewFeed({ title: "", description: "", files: [] });
       setFeedPreviews([]);
-      setCurrentPreviewIndex(0);
       toast.success("Feed posted successfully!");
     } catch {
       toast.error("Failed to post feed");
@@ -50,29 +45,29 @@ export default function AddFeed() {
   };
 
   const handleFilesChange = (e) => {
-    const files = Array.from(e.target.files).slice(0, 10); // max 10 files
-    const previews = files.map((file) => {
-      let type = file.type.startsWith("image/")
+    const incoming = Array.from(e.target.files);
+    const merged = [...newFeed.files, ...incoming].slice(0, 10);
+    const previews = merged.map((file) => ({
+      url: URL.createObjectURL(file),
+      name: file.name,
+      type: file.type.startsWith("image/")
         ? "image"
         : file.type.startsWith("video/")
         ? "video"
         : file.type === "application/pdf"
         ? "pdf"
-        : null;
-      return { url: URL.createObjectURL(file), type };
-    });
+        : "other",
+    }));
+    setNewFeed((prev) => ({ ...prev, files: merged }));
+    setFeedPreviews(previews);
+    e.target.value = "";
+  };
 
+  const handleRemoveFeedFile = (idx) => {
+    const files = newFeed.files.filter((_, i) => i !== idx);
+    const previews = feedPreviews.filter((_, i) => i !== idx);
     setNewFeed((prev) => ({ ...prev, files }));
     setFeedPreviews(previews);
-    setCurrentPreviewIndex(0);
-  };
-
-  const handlePrevPreview = () => {
-    setCurrentPreviewIndex((prev) => (prev === 0 ? feedPreviews.length - 1 : prev - 1));
-  };
-
-  const handleNextPreview = () => {
-    setCurrentPreviewIndex((prev) => (prev === feedPreviews.length - 1 ? 0 : prev + 1));
   };
 
   /*** LOST ITEM FUNCTIONS ***/
@@ -108,7 +103,13 @@ export default function AddFeed() {
     const file = e.target.files[0];
     if (!file) return;
     setNewItem({ ...newItem, image: file });
-    setItemPreview(URL.createObjectURL(file));
+    setItemPreview({ url: URL.createObjectURL(file), name: file.name });
+    e.target.value = "";
+  };
+
+  const handleRemoveItemImage = () => {
+    setNewItem((prev) => ({ ...prev, image: null }));
+    setItemPreview(null);
   };
 
   return (
@@ -116,7 +117,7 @@ export default function AddFeed() {
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
 
       <h1 className="text-4xl md:text-5xl font-extrabold text-center text-gray-800 mb-12">
-        Campus Feed & Lost Items
+        Campus Feed &amp; Lost Items
       </h1>
 
       {/* AI Section */}
@@ -144,59 +145,51 @@ export default function AddFeed() {
             className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400"
           />
 
-          <div className="flex flex-col items-center gap-3">
-            <input
-              type="file"
-              accept="image/*,video/*,.pdf"
-              onChange={handleFilesChange}
-              id="feedFileInput"
-              multiple
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => document.getElementById("feedFileInput").click()}
-              className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:from-green-600 hover:to-teal-600 transition"
-            >
-              📂 {newFeed.files.length ? `Change Files (${newFeed.files.length})` : "Choose Files (max 10)"}
-            </button>
+          <input
+            type="file"
+            accept="image/*,video/*,.pdf"
+            onChange={handleFilesChange}
+            id="feedFileInput"
+            multiple
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => document.getElementById("feedFileInput").click()}
+            className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:from-green-600 hover:to-teal-600 transition"
+          >
+            📂 {newFeed.files.length ? `Add More Files (${newFeed.files.length}/10)` : "Choose Files (max 10)"}
+          </button>
 
-            {feedPreviews.length > 0 && (
-              <div className="relative flex items-center justify-center mt-3">
-                <button
-                  onClick={handlePrevPreview}
-                  className="absolute left-0 bg-white/70 rounded-full p-2 hover:bg-white"
-                >
-                  ◀
-                </button>
-
-                {feedPreviews[currentPreviewIndex].type === "image" && (
-                  <img
-                    src={feedPreviews[currentPreviewIndex].url}
-                    alt="Preview"
-                    className="w-48 h-48 object-cover rounded-xl shadow-md"
-                  />
-                )}
-                {feedPreviews[currentPreviewIndex].type === "video" && (
-                  <video
-                    src={feedPreviews[currentPreviewIndex].url}
-                    controls
-                    className="w-64 h-48 rounded-xl shadow-md"
-                  />
-                )}
-                {feedPreviews[currentPreviewIndex].type === "pdf" && (
-                  <p className="text-green-600 underline">📄 PDF ready to upload</p>
-                )}
-
-                <button
-                  onClick={handleNextPreview}
-                  className="absolute right-0 bg-white/70 rounded-full p-2 hover:bg-white"
-                >
-                  ▶
-                </button>
-              </div>
-            )}
-          </div>
+          {feedPreviews.length > 0 ? (
+            <div className="flex flex-wrap gap-3 mt-1">
+              {feedPreviews.map((preview, idx) => (
+                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border shadow-sm group">
+                  {preview.type === "image" && (
+                    <img src={preview.url} alt={preview.name} className="w-full h-full object-cover" />
+                  )}
+                  {preview.type === "video" && (
+                    <video src={preview.url} className="w-full h-full object-cover" />
+                  )}
+                  {(preview.type === "pdf" || preview.type === "other") && (
+                    <div className="flex items-center justify-center w-full h-full bg-gray-100 text-xs text-gray-600 p-1 text-center leading-tight">
+                      📄 {preview.name.length > 12 ? preview.name.slice(0, 12) + "…" : preview.name}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFeedFile(idx)}
+                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">📂 No files selected yet.</p>
+          )}
 
           <button
             onClick={handleAddFeed}
@@ -210,7 +203,7 @@ export default function AddFeed() {
         </div>
       </div>
 
-      {/* Lost Item Form remains unchanged */}
+      {/* Lost Item Form */}
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6">🏷️ Report a Lost Item</h2>
         <div className="flex flex-col gap-4">
@@ -229,25 +222,48 @@ export default function AddFeed() {
             className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400"
           />
 
-          <div className="flex flex-col items-center gap-3">
-            <label className="w-full cursor-pointer bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium shadow-md text-center hover:from-purple-600 hover:to-pink-600 transition">
-              Choose Image
-              <input type="file" accept="image/*" onChange={handleItemImageChange} className="hidden" />
-            </label>
-            {itemPreview && (
-              <img src={itemPreview} alt="Preview" className="w-48 h-48 object-cover rounded-xl shadow-md" />
-            )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleItemImageChange}
+            id="itemImageInput"
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => document.getElementById("itemImageInput").click()}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium shadow-md hover:from-purple-600 hover:to-pink-600 transition"
+          >
+            🖼️ {itemPreview ? "Change Image" : "Choose Image"}
+          </button>
 
-            <button
-              onClick={handleAddItem}
-              disabled={itemLoading}
-              className={`w-full bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold py-3 rounded-xl shadow-md transition transform hover:scale-105 ${
-                itemLoading ? "opacity-50 cursor-not-allowed" : "hover:from-green-600 hover:to-teal-600"
-              }`}
-            >
-              {itemLoading ? "Uploading..." : "Add Item"}
-            </button>
-          </div>
+          {itemPreview ? (
+            <div className="flex gap-3 mt-1">
+              <div className="relative w-20 h-20 rounded-xl overflow-hidden border shadow-sm group">
+                <img src={itemPreview.url} alt={itemPreview.name} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={handleRemoveItemImage}
+                  className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                  title="Remove"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">🖼️ No image selected yet.</p>
+          )}
+
+          <button
+            onClick={handleAddItem}
+            disabled={itemLoading}
+            className={`w-full bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold py-3 rounded-xl shadow-md transition transform hover:scale-105 ${
+              itemLoading ? "opacity-50 cursor-not-allowed" : "hover:from-green-600 hover:to-teal-600"
+            }`}
+          >
+            {itemLoading ? "Uploading..." : "Add Item"}
+          </button>
         </div>
       </div>
     </div>
